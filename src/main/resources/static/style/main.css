@@ -1,0 +1,72 @@
+.hidden {
+    display: none !important;
+}
+
+.page-content {
+    min-height: 60vh;
+}
+
+.auction-card {
+    transition: transform 0.2s;
+    margin-bottom: 20px;
+}
+
+.auction-card:hover {
+    transform: translateY(-5px);
+}
+
+.bid-form {
+    margin-top: 15px;
+}
+
+.countdown {
+    font-size: 0.9em;
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.jumbotron {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.card {
+    transition: transform 0.2s;
+    border: 1px solid rgba(0,0,0,0.125);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.news-item {
+    transition: background-color 0.2s;
+}
+
+.news-item:hover {
+    background-color: #f8f9fa;
+}
+
+.news-title {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.news-content {
+    line-height: 1.4;
+}
+
+/* Стили для навигации */
+.navbar-brand {
+    font-weight: bold;
+}
+
+#server-time {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+/* Стили для аватара */
+.rounded-circle {
+    object-fit: cover;
+}
