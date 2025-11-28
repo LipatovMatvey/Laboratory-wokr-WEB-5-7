@@ -361,8 +361,11 @@ body {
 }
 
 .toggle-password {
+    border: 1px solid #e2e8f0;
     border-left: none;
     background: white;
+    cursor: pointer;
+    padding: 0 12px;
 }
 
 .toggle-password:hover {
