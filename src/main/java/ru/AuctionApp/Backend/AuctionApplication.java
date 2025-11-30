@@ -1,4 +1,4 @@
-package com.example.auction;
+package ru.AuctionApp.Backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
