@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Аукцион - Аукционы</title>
     <script src="../library/bootstrap.bundle.min.js" defer></script>
-    <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
     <script src="../library/jquery-3.7.1.min.js" defer></script>
+    <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
     <link href="../style/main.css" rel="stylesheet" type="text/css"/>
     <script src="../js/auctions.js" defer></script>
+    
+    
 </head>
 <body>
 <!-- Навигация -->
@@ -21,19 +23,18 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="main.html">Главная</a>
+                    <a class="nav-link" href="main.html">Главная</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="auctions.html">Аукционы</a>
+                    <a class="nav-link active" href="auctions.html">Аукционы</a>
                 </li>
                 <li id="user-cabinet-item" class="nav-item hidden">
                     <a class="nav-link" href="user-cabinet.html">Личный кабинет</a>
                 </li>
             </ul>
             <div class="navbar-nav align-items-center">
-                <span id="server-time" class="navbar-text me-3"></span>
                 <span id="user-info" class="navbar-text me-3"></span>
-
+                <span id="user-role" class="navbar-text me-3"></span>
                 <!-- Кнопка Войти -->
                 <div id="login-item" class="nav-item">
                     <a href="auth.html" class="btn btn-outline-light btn-sm me-2">Войти</a>
