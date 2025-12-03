@@ -86,10 +86,12 @@ public class AuthService {
                         StandardCopyOption.REPLACE_EXISTING
                 );
 
-                user.setAvatarPath("/avatars/" + fileName);
+                // Сохраняем путь, начинающийся с /uploads/
+                user.setAvatarPath("/uploads/avatars/" + fileName);
 
             } catch (Exception e) {
-                throw new RuntimeException("Ошибка сохранения аватара");
+                e.printStackTrace();
+                throw new RuntimeException("Ошибка сохранения аватара: " + e.getMessage());
             }
         }
 
