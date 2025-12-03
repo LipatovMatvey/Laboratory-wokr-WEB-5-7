@@ -22,7 +22,13 @@ public class UserController {
     @Autowired
     private UsersRepository usersRepository;
 
-    // Получение всех пользователей (только для админа) - ВОЗВРАЩАЕМ ПАРОЛИ
+    /**
+     * Получает список всех пользователей (доступно только администраторам)
+     * Возвращает полные данные, включая пароли
+     *
+     * @param session HTTP сессия для проверки авторизации
+     * @return ResponseEntity со списком пользователей или сообщением об ошибке
+     */
     @GetMapping("/all")
     public ResponseEntity<?> getAllUsers(HttpSession session) {
         try {
@@ -39,9 +45,8 @@ public class UserController {
             }
 
             List<User> users = usersRepository.findAllByOrderById();
-
-            // Преобразуем пользователей в Map, чтобы вернуть все данные, включая пароль
             List<Map<String, Object>> usersWithPasswords = new ArrayList<>();
+
             for (User user : users) {
                 Map<String, Object> userData = convertUserToMap(user);
                 usersWithPasswords.add(userData);
@@ -56,7 +61,12 @@ public class UserController {
         }
     }
 
-    // Получение данных конкретного пользователя
+    /**
+     * Получает данные конкретного пользователя по ID
+     *
+     * @param id ID пользователя
+     * @return ResponseEntity с данными пользователя или сообщением об ошибке
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         try {
@@ -75,7 +85,15 @@ public class UserController {
         }
     }
 
-    // Обновление данных пользователя
+    /**
+     * Обновляет данные пользователя (для обычных пользователей)
+     * Разрешает обновление только ограниченного набора полей
+     *
+     * @param id ID пользователя
+     * @param updates Map с обновляемыми данными
+     * @param session HTTP сессия для проверки авторизации
+     * @return ResponseEntity с обновленными данными или сообщением об ошибке
+     */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUser(
             @PathVariable Long id,
@@ -95,13 +113,12 @@ public class UserController {
                         .body(Map.of("error", "Пользователь не найден"));
             }
 
-            // Обновляем только разрешенные поля
             if (updates.containsKey("fullName")) {
                 user.setFullName((String) updates.get("fullName"));
             }
+
             if (updates.containsKey("email")) {
                 String newEmail = (String) updates.get("email");
-                // Проверяем, не занят ли email другим пользователем
                 User existingUser = usersRepository.findByEmail(newEmail);
                 if (existingUser != null && !existingUser.getId().equals(id)) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -109,6 +126,7 @@ public class UserController {
                 }
                 user.setEmail(newEmail);
             }
+
             if (updates.containsKey("birthDate")) {
                 user.setBirthDate((String) updates.get("birthDate"));
             }
@@ -124,7 +142,14 @@ public class UserController {
         }
     }
 
-    // Загрузка аватара
+    /**
+     * Загружает или обновляет аватар пользователя
+     *
+     * @param id ID пользователя
+     * @param avatar файл изображения для загрузки
+     * @param session HTTP сессия для проверки авторизации
+     * @return ResponseEntity с URL нового аватара или сообщением об ошибке
+     */
     @PostMapping("/{id}/avatar")
     public ResponseEntity<?> uploadAvatar(
             @PathVariable Long id,
@@ -144,7 +169,6 @@ public class UserController {
                         .body(Map.of("error", "Пользователь не найден"));
             }
 
-            // Проверяем наличие файла
             if (avatar == null || avatar.isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "Файл не был загружен"));
@@ -155,7 +179,6 @@ public class UserController {
                         .body(Map.of("error", "Загружаемый файл должен быть изображением"));
             }
 
-            // Создаем уникальное имя файла
             String originalFilename = avatar.getOriginalFilename();
             String fileExtension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
@@ -163,17 +186,14 @@ public class UserController {
             }
             String fileName = UUID.randomUUID().toString() + fileExtension;
 
-            // Создаем директорию если не существует
             Path uploadPath = Paths.get("uploads/avatars");
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
-            // Сохраняем файл
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(avatar.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Сохраняем путь к файлу в базе данных
             user.setAvatarPath("/uploads/avatars/" + fileName);
             usersRepository.save(user);
 
@@ -189,7 +209,15 @@ public class UserController {
         }
     }
 
-    // Обновление пользователя админом
+    /**
+     * Обновляет данные пользователя с правами администратора
+     * Позволяет изменять все поля, включая пароль и роль
+     *
+     * @param id ID пользователя для обновления
+     * @param updates Map с обновляемыми данными
+     * @param session HTTP сессия для проверки прав администратора
+     * @return ResponseEntity с обновленными данными пользователя или сообщением об ошибке
+     */
     @PutMapping("/{id}/admin-update")
     public ResponseEntity<?> adminUpdateUser(
             @PathVariable Long id,
@@ -197,53 +225,34 @@ public class UserController {
             HttpSession session
     ) {
         try {
-            System.out.println("=== ADMIN UPDATE REQUEST ===");
-            System.out.println("User ID to update: " + id);
-            System.out.println("Updates received: " + updates);
-
             Long adminId = (Long) session.getAttribute("userId");
-            System.out.println("Admin ID from session: " + adminId);
-
             if (adminId == null) {
-                System.out.println("ERROR: Not authenticated");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
 
             User admin = usersRepository.findById(adminId).orElse(null);
             if (admin == null || !"admin".equals(admin.getRole())) {
-                System.out.println("ERROR: User is not admin or not found");
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут обновлять пользователей"));
             }
 
             User user = usersRepository.findById(id).orElse(null);
             if (user == null) {
-                System.out.println("ERROR: User to update not found");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Пользователь не найден"));
             }
 
-            System.out.println("Original user data:");
-            System.out.println("FullName: " + user.getFullName());
-            System.out.println("Email: " + user.getEmail());
-            System.out.println("Role: " + user.getRole());
-
-            // Обновляем поля
             if (updates.containsKey("fullName")) {
                 String fullName = (String) updates.get("fullName");
                 if (fullName != null && !fullName.trim().isEmpty()) {
                     user.setFullName(fullName.trim());
-                    System.out.println("Updating fullName to: " + fullName);
                 }
             }
 
             if (updates.containsKey("email")) {
                 String newEmail = (String) updates.get("email");
                 if (newEmail != null && !newEmail.trim().isEmpty()) {
-                    System.out.println("Updating email to: " + newEmail);
-
-                    // Проверяем email на валидность
                     if (!newEmail.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .body(Map.of("error", "Некорректный формат email"));
@@ -261,21 +270,18 @@ public class UserController {
             if (updates.containsKey("password")) {
                 String password = (String) updates.get("password");
                 if (password != null && !password.trim().isEmpty()) {
-                    System.out.println("Updating password (length: " + password.length() + ")");
                     user.setPassword(password.trim());
                 }
             }
 
             if (updates.containsKey("birthDate")) {
                 String birthDate = (String) updates.get("birthDate");
-                System.out.println("Updating birthDate to: " + birthDate);
                 user.setBirthDate(birthDate != null ? birthDate.trim() : null);
             }
 
             if (updates.containsKey("role")) {
                 String newRole = (String) updates.get("role");
                 if (newRole != null && !newRole.trim().isEmpty()) {
-                    System.out.println("Updating role to: " + newRole);
                     user.setRole(newRole);
                 }
             }
@@ -288,7 +294,6 @@ public class UserController {
                 } else if (bannedStatusObj != null) {
                     banned = Boolean.parseBoolean(bannedStatusObj.toString());
                 }
-                System.out.println("Updating bannedStatus to: " + banned);
                 user.setBannedStatus(banned);
             }
 
@@ -301,31 +306,31 @@ public class UserController {
                     try {
                         visits = Integer.parseInt(visitsObj.toString());
                     } catch (NumberFormatException e) {
-                        // Оставляем текущее значение
                     }
                 }
-                System.out.println("Updating visits to: " + visits);
                 user.setVisits(visits);
             }
 
             usersRepository.save(user);
-            System.out.println("User saved successfully");
-
-            // Возвращаем обновленного пользователя
             Map<String, Object> updatedUser = convertUserToMap(user);
-            System.out.println("Returning updated user: " + updatedUser);
 
             return ResponseEntity.ok(updatedUser);
 
         } catch (Exception e) {
-            System.err.println("ERROR in adminUpdateUser: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Ошибка при обновлении пользователя: " + e.getMessage()));
         }
     }
 
-    // Блокировка/разблокировка пользователя (ПРОСТОЙ МЕТОД)
+    /**
+     * Блокирует или разблокирует пользователя
+     *
+     * @param id ID пользователя для блокировки/разблокировки
+     * @param request Map с ключом "banned" (true/false)
+     * @param session HTTP сессия для проверки прав администратора
+     * @return ResponseEntity с обновленными данными или сообщением об ошибке
+     */
     @PostMapping("/{id}/ban")
     public ResponseEntity<?> toggleBan(
             @PathVariable Long id,
@@ -351,7 +356,6 @@ public class UserController {
                         .body(Map.of("error", "Пользователь не найден"));
             }
 
-            // Нельзя блокировать самого себя
             if (user.getId().equals(adminId)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Нельзя заблокировать самого себя"));
@@ -378,7 +382,13 @@ public class UserController {
         }
     }
 
-    // Удаление пользователя
+    /**
+     * Удаляет пользователя (только для администраторов)
+     *
+     * @param id ID пользователя для удаления
+     * @param session HTTP сессия для проверки прав администратора
+     * @return ResponseEntity с сообщением об успешном удалении или ошибке
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(
             @PathVariable Long id,
@@ -397,7 +407,6 @@ public class UserController {
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут удалять пользователей"));
             }
 
-            // Нельзя удалить самого себя
             if (id.equals(adminId)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Нельзя удалить самого себя"));
@@ -420,21 +429,33 @@ public class UserController {
         }
     }
 
-    // Получение ставок пользователя (заглушка)
+    /**
+     * Получает список ставок пользователя (заглушка)
+     *
+     * @param id ID пользователя
+     * @return ResponseEntity с пустым списком (требует реализации)
+     */
     @GetMapping("/{id}/bids")
     public ResponseEntity<?> getUserBids(@PathVariable Long id) {
-        // Это заглушка - в реальном приложении нужно реализовать получение ставок
         return ResponseEntity.ok(Collections.emptyList());
     }
 
-    // Получение выигранных лотов пользователя (заглушка)
+    /**
+     * Получает список выигранных лотов пользователя (заглушка)
+     *
+     * @param id ID пользователя
+     * @return ResponseEntity с пустым списком (требует реализации)
+     */
     @GetMapping("/{id}/won-lots")
     public ResponseEntity<?> getWonLots(@PathVariable Long id) {
-        // Это заглушка - в реальном приложении нужно реализовать получение выигранных лотов
         return ResponseEntity.ok(Collections.emptyList());
     }
 
-    // Вспомогательный метод для преобразования User в Map
+    /**
+     * Преобразует объект User в Map для сериализации
+     * @param user объект пользователя для преобразования
+     * @return Map с данными пользователя
+     */
     private Map<String, Object> convertUserToMap(User user) {
         Map<String, Object> userData = new HashMap<>();
         userData.put("id", user.getId());
@@ -445,7 +466,7 @@ public class UserController {
         userData.put("role", user.getRole());
         userData.put("avatarPath", user.getAvatarPath());
         userData.put("bannedStatus", user.isBannedStatus());
-        userData.put("password", user.getPassword()); // ВОЗВРАЩАЕМ ПАРОЛЬ
+        userData.put("password", user.getPassword());
         return userData;
     }
 }
