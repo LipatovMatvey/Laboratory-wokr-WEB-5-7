@@ -1,16 +1,12 @@
 $(document).ready(function() {
-    // Переключение между формами
     $('.auth-tab').on('click', function() {
         const tab = $(this).data('tab');
-
         $('.auth-tab').removeClass('active');
         $(this).addClass('active');
-
         $('.auth-form').removeClass('active');
         $(`#${tab}-form`).addClass('active');
     });
 
-    // Показать/скрыть пароль
     $('.toggle-password').on('click', function() {
         const target = $(this).data('target');
         const input = $(`#${target}`);
@@ -19,10 +15,8 @@ $(document).ready(function() {
         $(this).text(type === 'password' ? '👁️' : '🔒');
     });
 
-    // Форма входа
     $('#login-form').on('submit', function(e) {
         e.preventDefault();
-
         const email = $('#login-email').val();
         const password = $('#login-password').val();
 
@@ -45,17 +39,14 @@ $(document).ready(function() {
         });
     });
 
-    // Форма регистрации
     $('#register-form').on('submit', function(e) {
         e.preventDefault();
-
         const formData = new FormData();
         formData.append('email', $('#register-email').val());
         formData.append('fullName', $('#register-name').val());
         formData.append('password', $('#register-password').val());
         formData.append('birthDate', $('#birth-date').val());
 
-        // Проверка паролей
         const password = $('#register-password').val();
         const confirmPassword = $('#register-confirm-password').val();
 

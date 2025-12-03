@@ -1,49 +1,47 @@
 $(document).ready(function() {
-    // Проверка авторизации
     checkAuth();
     
-    // Обработчик выхода
     $('#logout-btn').on('click', function() {
         logout();
     });
     
-    // Загрузка аукционов
     loadAuctions();
     
-    // Фильтрация аукционов
     $('#auction-filters button').on('click', function() {
         const filter = $(this).data('filter');
-        
-        // Активный класс
         $('#auction-filters button').removeClass('active');
         $(this).addClass('active');
-        
-        // Применяем фильтр
         filterAuctions(filter);
     });
 });
 
+/**
+ * Проверяет авторизацию пользователя и обновляет UI
+ * @returns {void}
+ */
 function checkAuth() {
-    console.log('Проверка авторизации...');
     $.ajax({
         url: "/auth/whoAmI",
         method: "GET",
         success: function(response) {
-            console.log('Ответ от сервера:', response);
             updateNavigation(response);
         },
         error: function(xhr, status, error) {
-            console.error('Ошибка проверки авторизации:', error);
             updateNavigation({ authenticated: false });
         }
     });
 }
 
+/**
+ * Обновляет навигацию на основе данных пользователя
+ * @param {Object} response - Объект с данными пользователя
+ * @param {boolean} response.authenticated - Статус авторизации
+ * @param {string} response.fullName - Полное имя пользователя
+ * @param {string} response.role - Роль пользователя
+ * @returns {void}
+ */
 function updateNavigation(response) {
-    console.log('Обновление навигации с данными:', response);
-    
     if (response.authenticated) {
-        console.log('Пользователь авторизован, имя:', response.fullName, 'роль:', response.role);
         $('#user-info').text(response.fullName || 'Пользователь');
         $('#user-role').text(getRoleDisplayName(response.role));
         $('#login-item').addClass('hidden');
@@ -51,7 +49,6 @@ function updateNavigation(response) {
         $('#user-cabinet-item').removeClass('hidden');
         localStorage.setItem('user', JSON.stringify(response));
     } else {
-        console.log('Пользователь не авторизован');
         $('#user-info').text('');
         $('#user-role').text('Гость');
         $('#login-item').removeClass('hidden');
@@ -61,6 +58,11 @@ function updateNavigation(response) {
     }
 }
 
+/**
+ * Возвращает читаемое название роли
+ * @param {string} role - Код роли (admin, moder, user)
+ * @returns {string} Отображаемое название роли
+ */
 function getRoleDisplayName(role) {
     switch(role) {
         case 'admin': return 'Администратор';
@@ -70,6 +72,10 @@ function getRoleDisplayName(role) {
     }
 }
 
+/**
+ * Выполняет выход пользователя из системы
+ * @returns {void}
+ */
 function logout() {
     $.ajax({
         url: "/auth/logout",
@@ -85,18 +91,19 @@ function logout() {
     });
 }
 
-
+/**
+ * Загружает активные аукционы с сервера
+ * @returns {void}
+ */
 function loadAuctions() {
     $.ajax({
         url: "/api/auctions/active",
         method: "GET",
         success: function(auctions) {
-            // Сохраняем все аукционы для фильтрации
             window.allAuctions = auctions;
             renderAuctions(auctions);
         },
         error: function(xhr) {
-            console.error('Ошибка загрузки аукционов:', xhr.responseText);
             $('#auctions-list').html(`
                 <div class="col-12 text-center">
                     <p class="text-danger">Ошибка загрузки аукционов</p>
@@ -106,6 +113,11 @@ function loadAuctions() {
     });
 }
 
+/**
+ * Отображает список аукционов в контейнере
+ * @param {Array<Object>} auctions - Массив объектов аукционов
+ * @returns {void}
+ */
 function renderAuctions(auctions) {
     const $container = $('#auctions-list');
     
@@ -158,13 +170,17 @@ function renderAuctions(auctions) {
     
     $container.html(html);
     
-    // Обработчики для кнопок избранного
     $('.watchlist-btn').on('click', function() {
         const auctionId = $(this).data('auction-id');
         toggleWatchlist(auctionId, $(this));
     });
 }
 
+/**
+ * Фильтрует аукционы по выбранному критерию
+ * @param {string} filter - Критерий фильтрации ('all', 'ending', 'new')
+ * @returns {void}
+ */
 function filterAuctions(filter) {
     let filteredAuctions = [...window.allAuctions];
     
@@ -180,13 +196,17 @@ function filterAuctions(filter) {
             break;
         case 'all':
         default:
-            // Все аукционы
             break;
     }
     
     renderAuctions(filteredAuctions);
 }
 
+/**
+ * Рассчитывает оставшееся время до окончания аукциона
+ * @param {string} endTime - Время окончания аукциона в формате ISO
+ * @returns {string} Текстовое представление оставшегося времени
+ */
 function calculateTimeLeft(endTime) {
     const end = new Date(endTime);
     const now = new Date();
@@ -202,13 +222,24 @@ function calculateTimeLeft(endTime) {
     return 'Менее часа';
 }
 
+/**
+ * Проверяет, является ли аукцион новым (создан менее 7 дней назад)
+ * @param {string} createdAt - Дата создания аукциона в формате ISO
+ * @returns {boolean} true если аукцион новый
+ */
 function isAuctionNew(createdAt) {
     const created = new Date(createdAt);
     const now = new Date();
     const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-    return diffDays < 7; // Новые аукционы - созданные менее 7 дней назад
+    return diffDays < 7;
 }
 
+/**
+ * Добавляет или удаляет аукцион из избранного
+ * @param {number} auctionId - ID аукциона
+ * @param {jQuery} $button - jQuery объект кнопки
+ * @returns {void}
+ */
 function toggleWatchlist(auctionId, $button) {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     

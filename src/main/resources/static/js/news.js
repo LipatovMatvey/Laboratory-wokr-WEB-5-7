@@ -1,37 +1,37 @@
 $(document).ready(function() {
-    // Проверка авторизации
     checkAuth();
     
-    // Обработчик выхода
     $('#logout-btn').on('click', function() {
         logout();
     });
     
-    // Загрузка новостей
     loadNews();
 });
 
+/**
+ * Проверяет статус авторизации пользователя
+ * @returns {void}
+ */
 function checkAuth() {
-    console.log('Проверка авторизации...');
     $.ajax({
         url: "/auth/whoAmI",
         method: "GET",
         success: function(response) {
-            console.log('Ответ от сервера:', response);
             updateNavigation(response);
         },
         error: function(xhr, status, error) {
-            console.error('Ошибка проверки авторизации:', error);
             updateNavigation({ authenticated: false });
         }
     });
 }
 
+/**
+ * Обновляет навигацию на основе данных пользователя
+ * @param {Object} response - Объект с данными пользователя
+ * @returns {void}
+ */
 function updateNavigation(response) {
-    console.log('Обновление навигации с данными:', response);
-    
     if (response.authenticated) {
-        console.log('Пользователь авторизован, имя:', response.fullName, 'роль:', response.role);
         $('#user-info').text(response.fullName || 'Пользователь');
         $('#user-role').text(getRoleDisplayName(response.role));
         $('#login-item').addClass('hidden');
@@ -39,7 +39,6 @@ function updateNavigation(response) {
         $('#user-cabinet-item').removeClass('hidden');
         localStorage.setItem('user', JSON.stringify(response));
     } else {
-        console.log('Пользователь не авторизован');
         $('#user-info').text('');
         $('#user-role').text('Гость');
         $('#login-item').removeClass('hidden');
@@ -49,6 +48,11 @@ function updateNavigation(response) {
     }
 }
 
+/**
+ * Возвращает читаемое название роли
+ * @param {string} role - Код роли (admin, moder, user)
+ * @returns {string} Отображаемое название роли
+ */
 function getRoleDisplayName(role) {
     switch(role) {
         case 'admin': return 'Администратор';
@@ -58,7 +62,10 @@ function getRoleDisplayName(role) {
     }
 }
 
-
+/**
+ * Выполняет выход пользователя из системы
+ * @returns {void}
+ */
 function logout() {
     $.ajax({
         url: "/auth/logout",
@@ -74,6 +81,10 @@ function logout() {
     });
 }
 
+/**
+ * Загружает новости с сервера
+ * @returns {void}
+ */
 function loadNews() {
     $.ajax({
         url: "/api/news",
@@ -82,7 +93,6 @@ function loadNews() {
             renderNews(news);
         },
         error: function(xhr) {
-            console.error('Ошибка загрузки новостей:', xhr.responseText);
             $('#news-list').html(`
                 <div class="col-12 text-center">
                     <p class="text-danger">Ошибка загрузки новостей</p>
@@ -92,6 +102,11 @@ function loadNews() {
     });
 }
 
+/**
+ * Отображает список новостей
+ * @param {Array<Object>} news - Массив объектов новостей
+ * @returns {void}
+ */
 function renderNews(news) {
     const $container = $('#news-list');
     
@@ -134,14 +149,17 @@ function renderNews(news) {
     
     $container.html(html);
     
-    // Обработчики для кнопок "Читать подробнее"
     $('.read-more-btn').on('click', function() {
         const newsId = $(this).data('news-id');
         showNewsDetail(newsId);
     });
 }
 
+/**
+ * Перенаправляет на страницу детального просмотра новости
+ * @param {number} newsId - ID новости
+ * @returns {void}
+ */
 function showNewsDetail(newsId) {
-    // Переход на страницу детального просмотра новости
     window.location.href = `news-detail.html?id=${newsId}`;
 }
