@@ -1,4 +1,4 @@
-package ru.AuctionApp.Backend.DTO;
+package ru.AuctionApp.Backend.Dto;
 
 import lombok.Data;
 import ru.AuctionApp.Backend.Entity.User;
@@ -9,7 +9,7 @@ import ru.AuctionApp.Backend.Entity.User;
  * и в механизме проверки сессии (whoAmI).
  */
 @Data
-public class UserDTO {
+public class UserDto {
     private boolean authenticated;
     private Long id;
     private String fullName;
@@ -24,7 +24,7 @@ public class UserDTO {
      * Конструктор с параметром
      * @param u Пользователь
      */
-    public UserDTO(User u) {
+    public UserDto(User u) {
         this.authenticated = true;
         this.id = u.getId();
         this.fullName = u.getFullName();
@@ -39,7 +39,7 @@ public class UserDTO {
     /**
      * Конструктор по умолчанию
      */
-    public UserDTO() {
+    public UserDto() {
         this.authenticated = false;
         this.id = null;
         this.fullName = null;

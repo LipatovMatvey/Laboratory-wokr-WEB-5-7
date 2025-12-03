@@ -1,4 +1,4 @@
-package ru.AuctionApp.Backend.Repositories;
+package ru.AuctionApp.Backend.Repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.AuctionApp.Backend.Entity.User;
@@ -6,7 +6,7 @@ import ru.AuctionApp.Backend.Entity.User;
 import java.util.List;
 
 // JpaRepository<КлассEntity, ТипPrimaryKey>
-public interface UsersRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long> {
 
     // поиск по email
     User findByEmail(String email);

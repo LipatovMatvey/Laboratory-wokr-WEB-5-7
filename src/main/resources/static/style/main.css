@@ -56,7 +56,6 @@
     line-height: 1.4;
 }
 
-/* Стили для навигации */
 .navbar-brand {
     font-weight: bold;
 }
@@ -66,7 +65,6 @@
     font-size: 0.9em;
 }
 
-/* Стили для аватара */
 .rounded-circle {
     object-fit: cover;
 }

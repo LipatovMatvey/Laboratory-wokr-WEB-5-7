@@ -1,12 +1,16 @@
-package ru.AuctionApp.Backend.Services;
+package ru.AuctionApp.Backend.Service;
 
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.AuctionApp.Backend.DTO.UserDTO;
+import ru.AuctionApp.Backend.Dto.UserDto;
 import ru.AuctionApp.Backend.Entity.User;
-import ru.AuctionApp.Backend.Repositories.UsersRepository;
+import ru.AuctionApp.Backend.Exception.BannedStatusException;
+import ru.AuctionApp.Backend.Exception.InvalidPasswordException;
+import ru.AuctionApp.Backend.Exception.UserAlreadyExistsException;
+import ru.AuctionApp.Backend.Exception.UserNotFoundException;
+import ru.AuctionApp.Backend.Repository.UserRepository;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,10 +32,10 @@ import java.util.UUID;
 public class AuthService {
 
     @Autowired
-    private UsersRepository userRepository;
+    private UserRepository userRepository;
 
     /**
-     * Регистрирует нового пользователя.
+     * Регистрирует нового пользователя
      *
      * @param email - почта пользователя
      * @param fullName - ФИО пользователя
@@ -42,7 +46,7 @@ public class AuthService {
      * @param session - текущая Http сессия
      * @return - DTO с данными сохранённого пользователя
      */
-    public UserDTO register(
+    public UserDto register(
             String email,
             String fullName,
             String birthDate,
@@ -52,7 +56,7 @@ public class AuthService {
             HttpSession session
     ) {
         if (userRepository.existsByEmail(email))
-            throw new RuntimeException("Пользователь с таким Email уже существует");
+            throw new UserAlreadyExistsException("Пользователь с таким Email уже существует");
 
         User user = new User();
         user.setEmail(email);
@@ -99,57 +103,55 @@ public class AuthService {
             session.setAttribute("userId", saved.getId());
         }
 
-        return new UserDTO(saved);
+        return new UserDto(saved);
     }
 
 
     /**
-     * Авторизует пользователя по email и паролю.
-     *
+     * Авторизует пользователя по email и паролю
      * @param email - введенная почта
      * @param password - введенный пароль
      * @return - UserDto с данными авторизованного пользователя
      */
-    public UserDTO login(String email, String password) {
+    public UserDto login(String email, String password) {
         User user = userRepository.findByEmail(email);
 
         if (user == null)
-            throw new RuntimeException("Пользователь не найден");
+            throw new UserNotFoundException("Такого пользователя не существует");
 
         if (!user.getPassword().equals(password))
-            throw new RuntimeException("Неверный пароль");
+            throw new InvalidPasswordException("Неверный пароль");
 
         if (userRepository.existsByEmailAndBannedStatusTrue(email))
-            throw new RuntimeException("Пользователь с таким email был заблокирован");
+            throw new BannedStatusException("Пользователь с таким email был заблокирован");
 
         user.setVisits(user.getVisits() + 1);
         userRepository.save(user);
 
-        return new UserDTO(user);
+        return new UserDto(user);
     }
 
     /**
-     * Определяет текущего авторизованного пользователя по userId из сессии.
-     *
-     * @param session - текущая HTTP - сессия
-     * @return - UserDto:
+     * Определяет текущего авторизованного пользователя по userId из сессии
+     * @param session текущая HTTP - сессия
+     * @return UserDto:
      *          - авторизованный пользователь, если userId существует и валиден;
      *          - гость (authenticated = false), если пользователь не найден или userId нет.
      */
-    public UserDTO whoAmI(HttpSession session) {
+    public UserDto whoAmI(HttpSession session) {
 
         Long userId = (Long) session.getAttribute("userId");
 
         if (userId == null) {
-            return new UserDTO();
+            return new UserDto();
         }
 
         User user = userRepository.findById(userId).orElse(null);
 
         if (user == null) {
-            return new UserDTO();
+            return new UserDto();
         }
 
-        return new UserDTO(user);
+        return new UserDto(user);
     }
 }
