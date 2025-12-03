@@ -469,4 +469,111 @@ public class UserController {
         userData.put("password", user.getPassword());
         return userData;
     }
+
+    /**
+     * Создает нового пользователя (доступно только администраторам)
+     *
+     * @param userData Map с данными нового пользователя
+     * @param session HTTP сессия для проверки прав администратора
+     * @return ResponseEntity с созданным пользователем или сообщением об ошибке
+     */
+    @PostMapping("/create")
+    public ResponseEntity<?> createUser(
+            @RequestBody Map<String, Object> userData,
+            HttpSession session
+    ) {
+        try {
+            Long adminId = (Long) session.getAttribute("userId");
+            if (adminId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Не авторизован"));
+            }
+
+            User admin = usersRepository.findById(adminId).orElse(null);
+            if (admin == null || !"admin".equals(admin.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Доступ запрещен. Только администраторы могут создавать пользователей"));
+            }
+
+            // Валидация обязательных полей
+            if (!userData.containsKey("fullName") || !userData.containsKey("email") || !userData.containsKey("password")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Необходимо указать имя, email и пароль"));
+            }
+
+            String fullName = (String) userData.get("fullName");
+            String email = (String) userData.get("email");
+            String password = (String) userData.get("password");
+            String birthDate = (String) userData.get("birthDate");
+            String role = (String) userData.get("role");
+
+            if (role == null) {
+                role = "user"; // По умолчанию создаем обычного пользователя
+            }
+
+            if (fullName == null || fullName.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Имя пользователя не может быть пустым"));
+            }
+
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Email не может быть пустым"));
+            }
+
+            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Некорректный формат email"));
+            }
+
+            if (password == null || password.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Пароль не может быть пустым"));
+            }
+
+            if (password.trim().length() < 6) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Пароль должен содержать минимум 6 символов"));
+            }
+
+            // Проверка на существование email
+            if (usersRepository.existsByEmail(email)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "Пользователь с таким email уже существует"));
+            }
+
+            // Создаем нового пользователя
+            User newUser = new User();
+            newUser.setFullName(fullName.trim());
+            newUser.setEmail(email.trim());
+            newUser.setPassword(password.trim());
+            newUser.setBirthDate(birthDate != null ? birthDate.trim() : null);
+            newUser.setRole(role);
+            newUser.setVisits(0);
+            newUser.setBannedStatus(false);
+
+            // Обработка статуса блокировки, если указан
+            if (userData.containsKey("bannedStatus")) {
+                Object bannedStatusObj = userData.get("bannedStatus");
+                boolean banned = false;
+                if (bannedStatusObj instanceof Boolean) {
+                    banned = (Boolean) bannedStatusObj;
+                } else if (bannedStatusObj != null) {
+                    banned = Boolean.parseBoolean(bannedStatusObj.toString());
+                }
+                newUser.setBannedStatus(banned);
+            }
+
+            usersRepository.save(newUser);
+
+            Map<String, Object> response = convertUserToMap(newUser);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Ошибка при создании пользователя: " + e.getMessage()));
+        }
+    }
+
 }

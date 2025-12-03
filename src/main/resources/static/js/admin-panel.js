@@ -1,3 +1,4 @@
+
 let allUsers = [];
 let currentPage = 1;
 const usersPerPage = 10;
@@ -21,6 +22,15 @@ function initAdminPanel() {
     
     $('#save-user-btn').off('click').on('click', saveUserChanges);
     $('#delete-user-btn').off('click').on('click', deleteUser);
+    $('#create-user-btn').off('click').on('click', showCreateUserModal);
+    $('#save-new-user-btn').off('click').on('click', createNewUser);
+    
+    // Обработчик загрузки аватара для нового пользователя
+    $('#new-user-avatar').off('change').on('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            previewNewUserAvatar(e.target.files[0]);
+        }
+    });
     
     isInitialized = true;
 }
@@ -228,7 +238,7 @@ function setupPagination() {
 }
 
 /**
- * Отправляет запрос на обновление данных пользователя на сервер.
+ * Отправляет запрос на обновление данных пользователя на сервере.
  * @param {number} userId - ID пользователя
  * @param {object} userData - Обновленные данные пользователя
  */
@@ -254,6 +264,7 @@ function sendUpdateRequest(userId, userData) {
             }
             
             renderUsersTable();
+            showNotification('✅ Пользователь успешно обновлен!', 'success');
         },
         error: function(xhr) {
             let errorMsg = 'Неизвестная ошибка';
@@ -336,6 +347,166 @@ function openEditModal(userId) {
     
     const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
     editModal.show();
+}
+
+/**
+ * Показывает модальное окно для создания нового пользователя
+ */
+function showCreateUserModal() {
+    // Сброс формы
+    $('#new-user-form')[0].reset();
+    $('#new-user-avatar-preview').html(`
+        <div class="text-center">
+            <img src="https://via.placeholder.com/150x150?text=Аватар" 
+                 class="rounded-circle mb-2" width="150" height="150" alt="Предпросмотр аватара" 
+                 id="new-user-avatar-img">
+            <div class="text-muted small">Аватар пользователя</div>
+        </div>
+    `);
+    
+    // Скрыть элемент предупреждения о файле
+    $('#new-user-avatar-file-info').hide();
+    
+    // Сброс загруженного файла
+    $('#new-user-avatar').val('');
+    
+    const createModal = new bootstrap.Modal(document.getElementById('createUserModal'));
+    createModal.show();
+}
+
+/**
+ * Предпросмотр аватара для нового пользователя
+ */
+function previewNewUserAvatar(file) {
+    if (!file || !file.type.startsWith('image/')) {
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        $('#new-user-avatar-img').attr('src', e.target.result);
+        $('#new-user-avatar-file-info').show().text(`Файл: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
+    };
+    reader.readAsDataURL(file);
+}
+
+/**
+ * Создает нового пользователя
+ */
+function createNewUser() {
+    const userData = {
+        fullName: $('#new-user-fullname').val().trim(),
+        email: $('#new-user-email').val().trim(),
+        password: $('#new-user-password').val().trim(),
+        birthDate: $('#new-user-birthdate').val(),
+        role: $('#new-user-role').val(),
+        bannedStatus: $('#new-user-banned').prop('checked')
+    };
+    
+    // Валидация
+    if (!userData.fullName) {
+        showNotification('Пожалуйста, введите имя пользователя', 'warning');
+        $('#new-user-fullname').focus();
+        return;
+    }
+    
+    if (!userData.email) {
+        showNotification('Пожалуйста, введите email', 'warning');
+        $('#new-user-email').focus();
+        return;
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userData.email)) {
+        showNotification('Пожалуйста, введите корректный email адрес', 'warning');
+        $('#new-user-email').focus();
+        return;
+    }
+    
+    if (!userData.password) {
+        showNotification('Пожалуйста, введите пароль', 'warning');
+        $('#new-user-password').focus();
+        return;
+    }
+    
+    if (userData.password.length < 6) {
+        showNotification('Пароль должен содержать минимум 6 символов', 'warning');
+        $('#new-user-password').focus();
+        return;
+    }
+    
+    const $saveBtn = $('#save-new-user-btn');
+    const originalText = $saveBtn.text();
+    $saveBtn.prop('disabled', true).text('Создание...');
+    
+    console.log('Отправка запроса на создание пользователя:', userData);
+    
+    $.ajax({
+        url: "/api/users/create",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(userData),
+        success: function(newUser) {
+            console.log('Пользователь успешно создан:', newUser);
+            
+            // Добавляем нового пользователя в начало списка
+            allUsers.unshift(newUser);
+            
+            // Возвращаемся на первую страницу
+            currentPage = 1;
+            
+            // Обновляем таблицу и пагинацию
+            renderUsersTable();
+            setupPagination();
+            
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            showNotification('✅ Пользователь успешно создан!', 'success');
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка при создании пользователя:', {
+                status: xhr.status,
+                statusText: xhr.statusText,
+                responseText: xhr.responseText,
+                error: error
+            });
+            
+            let errorMsg = 'Неизвестная ошибка';
+            
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMsg = xhr.responseJSON.error;
+            } else if (xhr.status === 400) {
+                errorMsg = 'Некорректные данные';
+            } else if (xhr.status === 401) {
+                errorMsg = 'Требуется авторизация';
+            } else if (xhr.status === 403) {
+                errorMsg = 'Доступ запрещен';
+            } else if (xhr.status === 404) {
+                errorMsg = 'Эндпоинт не найден';
+            } else if (xhr.status === 405) {
+                errorMsg = 'Метод не разрешен';
+            } else if (xhr.status === 409) {
+                errorMsg = 'Пользователь с таким email уже существует';
+            } else if (xhr.responseText) {
+                // Попробуем получить текст ошибки
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.error || errorMsg;
+                } catch (e) {
+                    errorMsg = xhr.responseText || errorMsg;
+                }
+            }
+            
+            showNotification('❌ Ошибка: ' + errorMsg, 'danger');
+        },
+        complete: function() {
+            $saveBtn.prop('disabled', false).text(originalText);
+        }
+    });
 }
 
 /**

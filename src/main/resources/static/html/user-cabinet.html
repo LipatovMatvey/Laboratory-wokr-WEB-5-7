@@ -149,7 +149,12 @@
         <div class="tab-pane fade" id="admin-panel" role="tabpanel">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Управление пользователями</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Управление пользователями</h5>
+                        <button id="create-user-btn" class="btn btn-success btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i> Создать пользователя
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <!-- Простая таблица без фильтров -->
@@ -235,6 +240,77 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                 <button type="button" class="btn btn-danger" id="delete-user-btn">Удалить</button>
                 <button type="button" class="btn btn-primary" id="save-user-btn">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для создания нового пользователя -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создание нового пользователя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="new-user-form">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <!-- Блок для аватара -->
+                            <div id="new-user-avatar-preview" class="mb-3">
+                                <div class="text-center">
+                                    <img src="https://via.placeholder.com/150x150?text=Аватар" 
+                                         class="rounded-circle mb-2" width="150" height="150" alt="Предпросмотр аватара" 
+                                         id="new-user-avatar-img">
+                                    <div class="text-muted small">Аватар пользователя</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new-user-avatar" class="form-label">Загрузить аватар</label>
+                                <input type="file" class="form-control" id="new-user-avatar" accept="image/*">
+                                <div class="form-text">JPG, PNG до 5MB (опционально)</div>
+                                <div id="new-user-avatar-file-info" class="small text-info mt-1" style="display: none;"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <!-- Поля для данных -->
+                            <div class="mb-3">
+                                <label for="new-user-fullname" class="form-label">Имя *</label>
+                                <input type="text" class="form-control" id="new-user-fullname" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new-user-email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="new-user-email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new-user-password" class="form-label">Пароль *</label>
+                                <input type="text" class="form-control" id="new-user-password" required>
+                                <div class="form-text">Минимум 6 символов</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="new-user-birthdate" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="new-user-birthdate">
+                            </div>
+                            <div class="mb-3">
+                                <label for="new-user-role" class="form-label">Роль *</label>
+                                <select class="form-control" id="new-user-role" required>
+                                    <option value="user" selected>Пользователь</option>
+                                    <option value="moder">Модератор</option>
+                                    <option value="admin">Администратор</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="new-user-banned">
+                                <label class="form-check-label" for="new-user-banned">Заблокирован при создании</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="save-new-user-btn">Создать пользователя</button>
             </div>
         </div>
     </div>
