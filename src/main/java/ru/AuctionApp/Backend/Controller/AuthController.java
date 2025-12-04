@@ -1,6 +1,5 @@
 package ru.AuctionApp.Backend.Controller;
 
-
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.AuctionApp.Backend.DTO.UserDTO;
 import ru.AuctionApp.Backend.Entity.User;
 import ru.AuctionApp.Backend.Services.AuthService;
+
 import java.util.Map;
 
 /**
@@ -71,7 +71,6 @@ public class AuthController {
      */
     @PostMapping("/login")
     public UserDTO login(@RequestBody User loginData, HttpSession session) {
-
         UserDTO dto = authService.login(loginData.getEmail(), loginData.getPassword());
 
         // если вошёл успешно — сохраняем userId в сессию

@@ -551,6 +551,7 @@ public class UserController {
             newUser.setRole(role);
             newUser.setVisits(0);
             newUser.setBannedStatus(false);
+            newUser.setAvatarPath("/uploads/avatars/img.png"); // Дефолтная аватарка
 
             // Обработка статуса блокировки, если указан
             if (userData.containsKey("bannedStatus")) {
@@ -562,6 +563,134 @@ public class UserController {
                     banned = Boolean.parseBoolean(bannedStatusObj.toString());
                 }
                 newUser.setBannedStatus(banned);
+            }
+
+            usersRepository.save(newUser);
+
+            Map<String, Object> response = convertUserToMap(newUser);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Ошибка при создании пользователя: " + e.getMessage()));
+        }
+    }
+
+
+    /**
+     * Создает нового пользователя с возможностью загрузки аватарки
+     *
+     * @param email Email пользователя
+     * @param fullName Полное имя пользователя
+     * @param birthDate Дата рождения (необязательно)
+     * @param password Пароль
+     * @param avatar Файл аватарки (необязательно)
+     * @param role Роль пользователя
+     * @param bannedStatus Статус блокировки
+     * @param session HTTP сессия для проверки прав администратора
+     * @return ResponseEntity с созданным пользователем или сообщением об ошибке
+     */
+    @PostMapping(value = "/create-with-avatar")
+    public ResponseEntity<?> createUserWithAvatar(
+            @RequestParam("email") String email,
+            @RequestParam("fullName") String fullName,
+            @RequestParam(value = "birthDate", required = false) String birthDate,
+            @RequestParam("password") String password,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatar,
+            @RequestParam(value = "role", defaultValue = "user") String role,
+            @RequestParam(value = "bannedStatus", defaultValue = "false") boolean bannedStatus,
+            HttpSession session
+    ) {
+        try {
+            Long adminId = (Long) session.getAttribute("userId");
+            if (adminId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Не авторизован"));
+            }
+
+            User admin = usersRepository.findById(adminId).orElse(null);
+            if (admin == null || !"admin".equals(admin.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Доступ запрещен. Только администраторы могут создавать пользователей"));
+            }
+
+            // Валидация обязательных полей
+            if (fullName == null || fullName.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Имя пользователя не может быть пустым"));
+            }
+
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Email не может быть пустым"));
+            }
+
+            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Некорректный формат email"));
+            }
+
+            if (password == null || password.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Пароль не может быть пустым"));
+            }
+
+            if (password.trim().length() < 6) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Пароль должен содержать минимум 6 символов"));
+            }
+
+            // Проверка на существование email
+            if (usersRepository.existsByEmail(email)) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "Пользователь с таким email уже существует"));
+            }
+
+            // Создаем нового пользователя
+            User newUser = new User();
+            newUser.setFullName(fullName.trim());
+            newUser.setEmail(email.trim());
+            newUser.setPassword(password.trim());
+            newUser.setBirthDate(birthDate != null ? birthDate.trim() : null);
+            newUser.setRole(role);
+            newUser.setVisits(0);
+            newUser.setBannedStatus(bannedStatus);
+
+            // Устанавливаем дефолтную аватарку
+            newUser.setAvatarPath("/uploads/avatars/img.png");
+
+            // Обработка загрузки аватарки (если файл предоставлен и не пустой)
+            if (avatar != null && !avatar.isEmpty() && avatar.getOriginalFilename() != null &&
+                    !avatar.getOriginalFilename().isEmpty()) {
+                try {
+                    // Проверяем, что это изображение
+                    if (avatar.getContentType() != null && avatar.getContentType().startsWith("image/")) {
+                        String originalFilename = avatar.getOriginalFilename();
+                        String fileExtension = "";
+                        if (originalFilename.contains(".")) {
+                            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                        }
+                        String fileName = UUID.randomUUID().toString() + fileExtension;
+
+                        Path uploadPath = Paths.get("uploads/avatars");
+                        if (!Files.exists(uploadPath)) {
+                            Files.createDirectories(uploadPath);
+                        }
+
+                        Path filePath = uploadPath.resolve(fileName);
+                        Files.copy(avatar.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                        newUser.setAvatarPath("/uploads/avatars/" + fileName);
+                    } else {
+                        // Если загруженный файл не является изображением, используем дефолтную аватарку
+                        newUser.setAvatarPath("/uploads/avatars/img.png");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // При ошибке загрузки используем дефолтную аватарку
+                    newUser.setAvatarPath("/uploads/avatars/img.png");
+                }
             }
 
             usersRepository.save(newUser);

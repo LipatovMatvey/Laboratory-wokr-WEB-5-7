@@ -39,6 +39,7 @@ $(document).ready(function() {
         });
     });
 
+    // В функции submit регистрационной формы добавьте обработку аватарки
     $('#register-form').on('submit', function(e) {
         e.preventDefault();
         const formData = new FormData();
@@ -53,6 +54,12 @@ $(document).ready(function() {
         if (password !== confirmPassword) {
             alert("Пароли не совпадают");
             return;
+        }
+
+        // Добавляем аватарку, если она была выбрана
+        const avatarInput = document.getElementById('register-avatar');
+        if (avatarInput && avatarInput.files.length > 0) {
+            formData.append('avatar', avatarInput.files[0]);
         }
 
         $.ajax({

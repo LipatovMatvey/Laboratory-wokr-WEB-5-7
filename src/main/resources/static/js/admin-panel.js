@@ -508,59 +508,86 @@ function previewNewUserAvatar(file) {
 /**
  * Создает нового пользователя
  */
+/**
+ * Создает нового пользователя с возможностью загрузки аватарки
+ */
 function createNewUser() {
-    const userData = {
-        fullName: $('#new-user-fullname').val().trim(),
-        email: $('#new-user-email').val().trim(),
-        password: $('#new-user-password').val().trim(),
-        birthDate: $('#new-user-birthdate').val(),
-        role: $('#new-user-role').val(),
-        bannedStatus: $('#new-user-banned').prop('checked')
-    };
+    const formData = new FormData();
+    const fullName = $('#new-user-fullname').val().trim();
+    const email = $('#new-user-email').val().trim();
+    const password = $('#new-user-password').val().trim();
+    const birthDate = $('#new-user-birthdate').val();
+    const role = $('#new-user-role').val();
+    const bannedStatus = $('#new-user-banned').prop('checked');
     
     // Валидация
-    if (!userData.fullName) {
+    if (!fullName) {
         showNotification('Пожалуйста, введите имя пользователя', 'warning');
         $('#new-user-fullname').focus();
         return;
     }
     
-    if (!userData.email) {
+    if (!email) {
         showNotification('Пожалуйста, введите email', 'warning');
         $('#new-user-email').focus();
         return;
     }
     
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userData.email)) {
+    if (!emailRegex.test(email)) {
         showNotification('Пожалуйста, введите корректный email адрес', 'warning');
         $('#new-user-email').focus();
         return;
     }
     
-    if (!userData.password) {
+    if (!password) {
         showNotification('Пожалуйста, введите пароль', 'warning');
         $('#new-user-password').focus();
         return;
     }
     
-    if (userData.password.length < 6) {
+    if (password.length < 6) {
         showNotification('Пароль должен содержать минимум 6 символов', 'warning');
         $('#new-user-password').focus();
         return;
+    }
+    
+    // Добавляем данные в FormData
+    formData.append('email', email);
+    formData.append('fullName', fullName);
+    formData.append('birthDate', birthDate || '');
+    formData.append('password', password);
+    formData.append('role', role || 'user');
+    formData.append('bannedStatus', bannedStatus);
+    
+    // Добавляем аватарку, если она была выбрана
+    const avatarInput = document.getElementById('new-user-avatar');
+    if (avatarInput && avatarInput.files.length > 0) {
+        const avatarFile = avatarInput.files[0];
+        // Проверяем, что это изображение (проверка на стороне сервера тоже будет)
+        formData.append('avatar', avatarFile);
     }
     
     const $saveBtn = $('#save-new-user-btn');
     const originalText = $saveBtn.text();
     $saveBtn.prop('disabled', true).text('Создание...');
     
-    console.log('Отправка запроса на создание пользователя:', userData);
+    console.log('Отправка запроса на создание пользователя с аватаркой');
+    console.log('Данные:', {
+        email: email,
+        fullName: fullName,
+        role: role,
+        bannedStatus: bannedStatus,
+        hasAvatar: avatarInput && avatarInput.files.length > 0
+    });
     
+    // ИЗМЕНИТЕ URL НА НОВЫЙ ENDPOINT
     $.ajax({
-        url: "/api/users/create",
+        url: "/api/users/create-with-avatar",  // ИЗМЕНИЛИ СЮДА
         method: "POST",
-        contentType: "application/json",
-        data: JSON.stringify(userData),
+        data: formData,
+        processData: false,
+        contentType: false,
         success: function(newUser) {
             console.log('Пользователь успешно создан:', newUser);
             
@@ -579,6 +606,8 @@ function createNewUser() {
             showNotification('✅ Пользователь успешно создан!', 'success');
         },
         error: function(xhr) {
+            console.error('Ошибка при создании пользователя:', xhr);
+            
             let errorMsg = 'Неизвестная ошибка';
             
             if (xhr.responseJSON && xhr.responseJSON.error) {
@@ -589,10 +618,12 @@ function createNewUser() {
                 errorMsg = 'Требуется авторизация';
             } else if (xhr.status === 403) {
                 errorMsg = 'Доступ запрещен';
-            } else if (xhr.status === 404) {
-                errorMsg = 'Эндпоинт не найден';
             } else if (xhr.status === 409) {
                 errorMsg = 'Пользователь с таким email уже существует';
+            } else if (xhr.status === 415) {
+                errorMsg = 'Неподдерживаемый тип данных. Попробуйте выбрать другое изображение';
+            } else if (xhr.status === 500) {
+                errorMsg = 'Внутренняя ошибка сервера';
             }
             
             showNotification('❌ Ошибка: ' + errorMsg, 'danger');

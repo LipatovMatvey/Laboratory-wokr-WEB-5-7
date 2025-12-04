@@ -8,6 +8,7 @@ import ru.AuctionApp.Backend.DTO.UserDTO;
 import ru.AuctionApp.Backend.Entity.User;
 import ru.AuctionApp.Backend.Repositories.UsersRepository;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -59,53 +60,64 @@ public class AuthService {
         user.setFullName(fullName);
         user.setBirthDate(birthDate);
         user.setPassword(password);
-        user.setRole("user");
-        user.setVisits(1);
 
+        // Устанавливаем дефолтную аватарку
         user.setAvatarPath("/uploads/avatars/img.png");
 
+        // Определяем роль
         String finalRole;
         if ("admin".equals(role) || "moder".equals(role) || "user".equals(role)) {
             finalRole = role;
         } else {
             finalRole = "user";
         }
-
         user.setRole(finalRole);
 
-        if (avatar != null && !avatar.isEmpty()) {
+        user.setVisits(1);
+        user.setBannedStatus(false);
+
+        // Обработка загрузки аватарки (только если файл не пустой)
+        if (avatar != null && !avatar.isEmpty() && !avatar.getOriginalFilename().isEmpty()) {
             try {
-                String fileName = UUID.randomUUID() + "_" + avatar.getOriginalFilename();
-                Path uploadPath = Paths.get("uploads/avatars");
+                // Проверяем, что это действительно файл изображения
+                String contentType = avatar.getContentType();
+                if (contentType != null && contentType.startsWith("image/")) {
+                    String fileName = UUID.randomUUID() + "_" + avatar.getOriginalFilename();
+                    Path uploadPath = Paths.get("uploads/avatars");
 
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
+                    if (!Files.exists(uploadPath)) {
+                        Files.createDirectories(uploadPath);
+                    }
+
+                    Files.copy(
+                            avatar.getInputStream(),
+                            uploadPath.resolve(fileName),
+                            StandardCopyOption.REPLACE_EXISTING
+                    );
+
+                    // Сохраняем путь, начинающийся с /uploads/
+                    user.setAvatarPath("/uploads/avatars/" + fileName);
+                } else {
+                    // Если загруженный файл не является изображением, используем дефолтную аватарку
+                    user.setAvatarPath("/uploads/avatars/img.png");
                 }
-
-                Files.copy(
-                        avatar.getInputStream(),
-                        uploadPath.resolve(fileName),
-                        StandardCopyOption.REPLACE_EXISTING
-                );
-
-                // Сохраняем путь, начинающийся с /uploads/
-                user.setAvatarPath("/uploads/avatars/" + fileName);
-
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
+                // При ошибке загрузки используем дефолтную аватарку
+                user.setAvatarPath("/uploads/avatars/img.png");
                 throw new RuntimeException("Ошибка сохранения аватара: " + e.getMessage());
             }
         }
 
         User saved = userRepository.save(user);
 
+        // Если это обычная регистрация (не от админа), устанавливаем сессию
         if (role == null || role.isBlank()) {
             session.setAttribute("userId", saved.getId());
         }
 
         return new UserDTO(saved);
     }
-
 
     /**
      * Авторизует пользователя по email и паролю.
@@ -123,7 +135,7 @@ public class AuthService {
         if (!user.getPassword().equals(password))
             throw new RuntimeException("Неверный пароль");
 
-        if (userRepository.existsByEmailAndBannedStatusTrue(email))
+        if (user.isBannedStatus())
             throw new RuntimeException("Пользователь с таким email был заблокирован");
 
         user.setVisits(user.getVisits() + 1);
@@ -141,7 +153,6 @@ public class AuthService {
      *          - гость (authenticated = false), если пользователь не найден или userId нет.
      */
     public UserDTO whoAmI(HttpSession session) {
-
         Long userId = (Long) session.getAttribute("userId");
 
         if (userId == null) {
