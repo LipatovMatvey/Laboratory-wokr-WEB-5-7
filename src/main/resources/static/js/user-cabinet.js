@@ -170,10 +170,11 @@ function loadUserData() {
     $('#user-birthdate').val(user.birthdate || '');
     $('#display-role').text(getRoleDisplayName(user.role) || 'Пользователь');
     
-    if (user.avatarUrl) {
+    if (user.avatarUrl && user.avatarUrl !== 'null') {
         $('#user-avatar').attr('src', user.avatarUrl);
     } else {
-        $('#user-avatar').attr('src', 'https://via.placeholder.com/100x100?text=User');
+        // Используем дефолтную аватарку вместо placeholder
+        $('#user-avatar').attr('src', '/uploads/avatars/img.png');
     }
     
     $.ajax({
@@ -187,6 +188,11 @@ function loadUserData() {
             if (userData.avatarPath) {
                 $('#user-avatar').attr('src', userData.avatarPath);
                 user.avatarUrl = userData.avatarPath;
+                localStorage.setItem('user', JSON.stringify(user));
+            }
+            else{
+                $('#user-avatar').attr('src', '/uploads/avatars/img.png');
+                user.avatarUrl = '/uploads/avatars/img.png';
                 localStorage.setItem('user', JSON.stringify(user));
             }
             

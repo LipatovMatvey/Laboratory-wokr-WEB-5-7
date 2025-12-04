@@ -62,6 +62,8 @@ public class AuthService {
         user.setRole("user");
         user.setVisits(1);
 
+        user.setAvatarPath("/uploads/avatars/img.png");
+
         String finalRole;
         if ("admin".equals(role) || "moder".equals(role) || "user".equals(role)) {
             finalRole = role;

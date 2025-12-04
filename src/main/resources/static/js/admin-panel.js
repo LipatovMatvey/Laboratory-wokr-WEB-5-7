@@ -1,48 +1,157 @@
+// admin-panel.js - ЗАМЕНИТЕ весь файл на этот код
 
 let allUsers = [];
 let currentPage = 1;
 const usersPerPage = 10;
-let isInitialized = false;
+
+// Основная инициализация при загрузке DOM
+$(document).ready(function() {
+    console.log('admin-panel.js загружен');
+    
+    // Проверяем, авторизован ли пользователь как администратор
+    checkAdminAccess();
+    
+    // Назначаем обработчики событий через делегирование
+    setupEventHandlers();
+});
 
 /**
- * Инициализирует админ-панель: проверяет права администратора,
- * загружает пользователей и настраивает обработчики событий.
+ * Проверяет доступ администратора
  */
-function initAdminPanel() {
-    if (isInitialized) return;
-    
+function checkAdminAccess() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.role !== 'admin') {
+    
+    if (user.role === 'admin') {
+        console.log('Пользователь является администратором');
+        $('#admin-tab').show();
+        
+        // Инициализируем при переключении на вкладку
+        $('#admin-tab').on('shown.bs.tab', function() {
+            console.log('Активирована вкладка админ-панели');
+            initAdminPanel();
+        });
+        
+        // Инициализируем сразу, если вкладка уже активна
+        if ($('#admin-tab').hasClass('active')) {
+            console.log('Вкладка админ-панели уже активна, инициализируем');
+            setTimeout(initAdminPanel, 100);
+        }
+    } else {
+        console.log('Пользователь не администратор');
         $('#admin-tab').hide();
-        $('#admin-panel').hide();
-        return;
     }
+}
+
+/**
+ * Настраивает обработчики событий
+ */
+function setupEventHandlers() {
+    // Обработчик для кнопки создания пользователя
+    $(document).on('click', '#create-user-btn', function(e) {
+        e.preventDefault();
+        console.log('Кнопка "Создать пользователя" нажата');
+        showCreateUserModal();
+    });
     
-    loadAllUsers();
+    // Обработчик для кнопки сохранения нового пользователя
+    $(document).on('click', '#save-new-user-btn', function(e) {
+        e.preventDefault();
+        createNewUser();
+    });
     
-    $('#save-user-btn').off('click').on('click', saveUserChanges);
-    $('#delete-user-btn').off('click').on('click', deleteUser);
-    $('#create-user-btn').off('click').on('click', showCreateUserModal);
-    $('#save-new-user-btn').off('click').on('click', createNewUser);
+    // Обработчик для кнопки сохранения изменений
+    $(document).on('click', '#save-user-btn', function(e) {
+        e.preventDefault();
+        saveUserChanges();
+    });
     
-    // Обработчик загрузки аватара для нового пользователя
-    $('#new-user-avatar').off('change').on('change', function(e) {
+    // Обработчик для кнопки удаления пользователя
+    $(document).on('click', '#delete-user-btn', function(e) {
+        e.preventDefault();
+        deleteUser();
+    });
+    
+    // Обработчик загрузки аватара
+    $(document).on('change', '#new-user-avatar', function(e) {
         if (e.target.files && e.target.files[0]) {
             previewNewUserAvatar(e.target.files[0]);
         }
     });
     
-    isInitialized = true;
+    // Обработчик кликов по строкам таблицы (делегирование)
+    $(document).on('click', '.user-row', function(e) {
+        if ($(e.target).closest('.toggle-password-btn, .toggle-ban-btn').length > 0) {
+            return;
+        }
+        const userId = $(this).data('user-id');
+        openEditModal(userId);
+    });
+    
+    // Обработчик кнопок показа/скрытия пароля
+    $(document).on('click', '.toggle-password-btn', function(e) {
+        e.stopPropagation();
+        const $button = $(this);
+        const $span = $button.siblings('.password-field');
+        const password = $button.data('password') || '';
+        
+        if ($span.text().includes('*')) {
+            $span.text(password);
+            $button.html('<i class="bi bi-eye-slash"></i>');
+        } else {
+            $span.text('*'.repeat(password.length || 6));
+            $button.html('<i class="bi bi-eye"></i>');
+        }
+    });
+    
+    // Обработчик кнопок блокировки/разблокировки
+    $(document).on('click', '.toggle-ban-btn', function(e) {
+        e.stopPropagation();
+        const userId = $(this).data('user-id');
+        const banned = $(this).data('banned');
+        toggleUserBan(userId, banned, $(this).closest('tr'));
+    });
 }
 
 /**
- * Загружает всех пользователей с сервера, исключая текущего администратора.
- * Отображает индикатор загрузки и обрабатывает возможные ошибки.
+ * Инициализирует админ-панель
+ */
+function initAdminPanel() {
+    console.log('Инициализация админ-панели');
+    loadAllUsers();
+    updateAdminPanelHeader();
+}
+
+/**
+ * Обновляет заголовок админ-панели
+ */
+function updateAdminPanelHeader() {
+    const headerHtml = `
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-0">Управление пользователями</h5>
+                <p class="text-muted small mb-0">Всего пользователей: <span id="total-users-count">${allUsers.length}</span></p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="create-auction.html" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Создать аукцион
+                </a>
+                <button id="create-user-btn" class="btn btn-success btn-sm">
+                    <i class="bi bi-person-plus me-1"></i> Создать пользователя
+                </button>
+            </div>
+        </div>
+    `;
+    
+    $('.card-header:has(h5:contains("Управление пользователями"))').html(headerHtml);
+}
+
+/**
+ * Загружает всех пользователей с сервера
  */
 function loadAllUsers() {
     $('#users-table-body').html(`
         <tr>
-            <td colspan="8" class="text-center text-muted">
+            <td colspan="8" class="text-center text-muted py-4">
                 <div class="spinner-border spinner-border-sm me-2" role="status">
                     <span class="visually-hidden">Загрузка...</span>
                 </div>
@@ -60,18 +169,19 @@ function loadAllUsers() {
             
             renderUsersTable();
             setupPagination();
+            updateAdminPanelHeader();
         },
         error: function(xhr) {
             const errorMsg = xhr.responseJSON?.error || 'Не удалось загрузить пользователей';
             
             $('#users-table-body').html(`
                 <tr>
-                    <td colspan="8" class="text-center text-danger">
+                    <td colspan="8" class="text-center text-danger py-4">
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         ${errorMsg}
                         <br>
                         <button class="btn btn-sm btn-outline-secondary mt-2" onclick="location.reload()">
-                            Перезагрузить страницу
+                            <i class="bi bi-arrow-clockwise me-1"></i>Перезагрузить страницу
                         </button>
                     </td>
                 </tr>
@@ -81,9 +191,7 @@ function loadAllUsers() {
 }
 
 /**
- * Рендерит таблицу пользователей для текущей страницы.
- * Отображает аватары, пароли (скрытые), роли и статусы пользователей.
- * Настраивает обработчики кликов для просмотра пароля и редактирования.
+ * Рендерит таблицу пользователей
  */
 function renderUsersTable() {
     const $tbody = $('#users-table-body');
@@ -94,7 +202,8 @@ function renderUsersTable() {
     if (pageUsers.length === 0) {
         $tbody.html(`
             <tr>
-                <td colspan="8" class="text-center text-muted">
+                <td colspan="8" class="text-center text-muted py-4">
+                    <i class="bi bi-people me-2"></i>
                     Нет пользователей
                 </td>
             </tr>
@@ -105,89 +214,80 @@ function renderUsersTable() {
     let html = '';
     pageUsers.forEach(user => {
         const statusClass = user.bannedStatus ? 'text-danger' : 'text-success';
+        const statusIcon = user.bannedStatus ? 'bi-person-x' : 'bi-person-check';
         const statusText = user.bannedStatus ? 'Заблокирован' : 'Активен';
         const roleText = getRoleDisplayName(user.role);
         const password = user.password || '';
-        const avatar = user.avatarPath || user.avatarUrl || '../img/default-avatar.png';
+        const avatar = user.avatarPath || user.avatarUrl || '/uploads/avatars/img.png';
+        const visits = user.visits || 0;
+        const email = user.email || 'Не указан';
         
         html += `
             <tr class="user-row" data-user-id="${user.id}" style="cursor: pointer;">
-                <td><strong>${user.id}</strong></td>
+                <td class="user-id-cell">
+                    <span class="badge bg-secondary">#${user.id}</span>
+                </td>
                 <td>
                     <div class="d-flex align-items-center">
                         <img src="${avatar}" class="rounded-circle me-2" width="36" height="36" alt="Аватар" 
-                             onerror="this.src='../img/default-avatar.png'">
-                        <span>${user.fullName || 'Не указано'}</span>
+                             onerror="this.src='/uploads/avatars/img.png'">
+                        <div>
+                            <div class="fw-medium">${user.fullName || 'Не указано'}</div>
+                            <small class="text-muted">ID: ${user.id}</small>
+                        </div>
                     </div>
                 </td>
-                <td><code>${user.email}</code></td>
                 <td>
-                    <span class="password-field" data-password="${password}">${'*'.repeat(password.length || 6)}</span>
-                    <button class="btn btn-sm btn-outline-secondary toggle-password-btn ms-1" 
-                            data-password="${password}">
-                        👁
-                    </button>
+                    <code class="user-email">${email}</code>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <span class="password-field" data-password="${password}">${'*'.repeat(password.length || 6)}</span>
+                        <button class="btn btn-sm btn-outline-secondary toggle-password-btn ms-1" 
+                                data-password="${password}" title="Показать/скрыть пароль">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
                 </td>
                 <td>${user.birthDate || '<span class="text-muted">Не указана</span>'}</td>
-                <td><strong>${user.visits || 0}</strong></td>
                 <td>
-                    <span class="badge bg-${getRoleBadgeColor(user.role)}">
-                        ${roleText}
+                    <span class="badge ${visits > 0 ? 'bg-info' : 'bg-secondary'}">
+                        <i class="bi bi-door-open me-1"></i>${visits}
                     </span>
                 </td>
                 <td>
-                    <span class="${statusClass} fw-bold">
-                        ${statusText}
+                    <span class="badge ${getRoleBadgeColor(user.role)}">
+                        <i class="bi ${getRoleIcon(user.role)} me-1"></i>${roleText}
                     </span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <i class="bi ${statusIcon} me-1 ${statusClass}"></i>
+                        <span class="${statusClass} fw-medium">
+                            ${statusText}
+                        </span>
+                        ${user.bannedStatus ? `
+                            <button class="btn btn-sm btn-outline-success ms-2 toggle-ban-btn" 
+                                    data-user-id="${user.id}" data-banned="false" title="Разблокировать">
+                                <i class="bi bi-unlock"></i>
+                            </button>
+                        ` : `
+                            <button class="btn btn-sm btn-outline-danger ms-2 toggle-ban-btn" 
+                                    data-user-id="${user.id}" data-banned="true" title="Заблокировать">
+                                <i class="bi bi-lock"></i>
+                            </button>
+                        `}
+                    </div>
                 </td>
             </tr>
         `;
     });
     
     $tbody.html(html);
-    
-    $('.toggle-password-btn').off('click').on('click', function(e) {
-        e.stopPropagation();
-        const $button = $(this);
-        const $span = $button.siblings('.password-field');
-        const password = $button.data('password') || '';
-        
-        if ($span.text().includes('*')) {
-            $span.text(password);
-            $button.text('🙈');
-        } else {
-            $span.text('*'.repeat(password.length || 6));
-            $button.text('👁');
-        }
-    });
-    
-    $('.user-row').off('click').on('click', function(e) {
-        if ($(e.target).closest('.toggle-password-btn').length > 0) {
-            return;
-        }
-        
-        const userId = $(this).data('user-id');
-        openEditModal(userId);
-    });
 }
 
 /**
- * Возвращает цвет бейджа в зависимости от роли пользователя.
- * @param {string} role - Роль пользователя (admin, moder, user)
- * @returns {string} CSS класс цвета для бейджа
- */
-function getRoleBadgeColor(role) {
-    switch(role) {
-        case 'admin': return 'danger';
-        case 'moder': return 'warning';
-        case 'user': return 'primary';
-        default: return 'secondary';
-    }
-}
-
-/**
- * Настраивает пагинацию для таблицы пользователей.
- * Создает кнопки навигации и обрабатывает переходы между страницами.
+ * Настраивает пагинацию
  */
 function setupPagination() {
     const totalPages = Math.ceil(allUsers.length / usersPerPage);
@@ -200,12 +300,16 @@ function setupPagination() {
     
     let html = '';
     
+    // Кнопка "Назад"
     html += `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-page="${currentPage - 1}">←</a>
+            <a class="page-link" href="#" data-page="${currentPage - 1}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
         </li>
     `;
     
+    // Номера страниц
     for (let i = 1; i <= totalPages; i++) {
         if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
             html += `
@@ -218,14 +322,18 @@ function setupPagination() {
         }
     }
     
+    // Кнопка "Вперед"
     html += `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-            <a class="page-link" href="#" data-page="${currentPage + 1}">→</a>
+            <a class="page-link" href="#" data-page="${currentPage + 1}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
         </li>
     `;
     
     $pagination.html(html);
     
+    // Обработчики кликов по пагинации
     $pagination.find('.page-link').off('click').on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -233,65 +341,69 @@ function setupPagination() {
         if (page && page >= 1 && page <= totalPages) {
             currentPage = page;
             renderUsersTable();
+            setupPagination();
         }
     });
 }
 
 /**
- * Отправляет запрос на обновление данных пользователя на сервере.
- * @param {number} userId - ID пользователя
- * @param {object} userData - Обновленные данные пользователя
+ * Возвращает цвет бейджа в зависимости от роли
  */
-function sendUpdateRequest(userId, userData) {
-    const $saveBtn = $('#save-user-btn');
-    const originalText = $saveBtn.text();
-    $saveBtn.prop('disabled', true).text('Сохранение...');
+function getRoleBadgeColor(role) {
+    switch(role) {
+        case 'admin': return 'bg-danger';
+        case 'moder': return 'bg-warning text-dark';
+        case 'user': return 'bg-primary';
+        default: return 'bg-secondary';
+    }
+}
+
+/**
+ * Возвращает иконку в зависимости от роли
+ */
+function getRoleIcon(role) {
+    switch(role) {
+        case 'admin': return 'bi-shield-check';
+        case 'moder': return 'bi-shield-exclamation';
+        case 'user': return 'bi-person';
+        default: return 'bi-person';
+    }
+}
+
+/**
+ * Блокирует или разблокирует пользователя
+ */
+function toggleUserBan(userId, banned, $row) {
+    if (!confirm(banned ? 'Заблокировать пользователя?' : 'Разблокировать пользователя?')) {
+        return;
+    }
     
     $.ajax({
-        url: `/api/users/${userId}/admin-update`,
-        method: "PUT",
+        url: `/api/users/${userId}/ban`,
+        method: "POST",
         contentType: "application/json",
-        data: JSON.stringify(userData),
-        success: function(updatedUser) {
+        data: JSON.stringify({ banned: banned }),
+        success: function(response) {
             const index = allUsers.findIndex(u => u.id == userId);
             if (index !== -1) {
-                allUsers[index] = updatedUser;
-            }
-            
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
-            if (modal) {
-                modal.hide();
+                allUsers[index].bannedStatus = banned;
             }
             
             renderUsersTable();
-            showNotification('✅ Пользователь успешно обновлен!', 'success');
+            showNotification(
+                banned ? '✅ Пользователь заблокирован' : '✅ Пользователь разблокирован',
+                'success'
+            );
         },
         error: function(xhr) {
-            let errorMsg = 'Неизвестная ошибка';
-            if (xhr.responseJSON && xhr.responseJSON.error) {
-                errorMsg = xhr.responseJSON.error;
-            } else if (xhr.status === 401) {
-                errorMsg = 'Ошибка авторизации';
-            } else if (xhr.status === 403) {
-                errorMsg = 'Доступ запрещен';
-            } else if (xhr.status === 404) {
-                errorMsg = 'Пользователь не найден';
-            } else if (xhr.status === 400) {
-                errorMsg = 'Некорректные данные';
-            }
-            
-            showNotification('❌ Ошибка: ' + errorMsg, 'danger');
-        },
-        complete: function() {
-            $saveBtn.prop('disabled', false).text(originalText);
+            const response = xhr.responseJSON;
+            showNotification('❌ Ошибка: ' + (response?.error || 'Не удалось изменить статус'), 'danger');
         }
     });
 }
 
 /**
- * Показывает уведомление пользователю.
- * @param {string} message - Текст сообщения
- * @param {string} type - Тип уведомления (success, danger, warning, info)
+ * Показывает уведомление
  */
 function showNotification(message, type = 'info') {
     $('.notification-toast').remove();
@@ -303,11 +415,11 @@ function showNotification(message, type = 'info') {
     const $toast = $(`
         <div class="notification-toast position-fixed top-0 end-0 m-3" style="z-index: 9999;">
             <div class="toast show" role="alert">
-                <div class="toast-header">
+                <div class="toast-header ${alertClass} text-white">
                     <strong class="me-auto">Уведомление</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
                 </div>
-                <div class="toast-body ${alertClass}">
+                <div class="toast-body">
                     ${message}
                 </div>
             </div>
@@ -322,8 +434,7 @@ function showNotification(message, type = 'info') {
 }
 
 /**
- * Открывает модальное окно для редактирования пользователя.
- * @param {number} userId - ID пользователя для редактирования
+ * Открывает модальное окно для редактирования пользователя
  */
 function openEditModal(userId) {
     const user = allUsers.find(u => u.id == userId);
@@ -341,8 +452,13 @@ function openEditModal(userId) {
     $('#edit-banned').prop('checked', user.bannedStatus || false);
     
     $('#editUserModal .modal-title').html(`
-        Редактирование пользователя
-        <small class="text-muted d-block">ID: ${user.id}, Email: ${user.email}</small>
+        <div class="d-flex align-items-center">
+            <i class="bi bi-person-gear me-2"></i>
+            <div>
+                <div>Редактирование пользователя</div>
+                <small class="text-muted">ID: ${user.id}, Email: ${user.email}</small>
+            </div>
+        </div>
     `);
     
     const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
@@ -353,6 +469,8 @@ function openEditModal(userId) {
  * Показывает модальное окно для создания нового пользователя
  */
 function showCreateUserModal() {
+    console.log('Открытие модального окна создания пользователя');
+    
     // Сброс формы
     $('#new-user-form')[0].reset();
     $('#new-user-avatar-preview').html(`
@@ -364,10 +482,7 @@ function showCreateUserModal() {
         </div>
     `);
     
-    // Скрыть элемент предупреждения о файле
     $('#new-user-avatar-file-info').hide();
-    
-    // Сброс загруженного файла
     $('#new-user-avatar').val('');
     
     const createModal = new bootstrap.Modal(document.getElementById('createUserModal'));
@@ -375,7 +490,7 @@ function showCreateUserModal() {
 }
 
 /**
- * Предпросмотр аватара для нового пользователя
+ * Предпросмотр аватара
  */
 function previewNewUserAvatar(file) {
     if (!file || !file.type.startsWith('image/')) {
@@ -449,17 +564,13 @@ function createNewUser() {
         success: function(newUser) {
             console.log('Пользователь успешно создан:', newUser);
             
-            // Добавляем нового пользователя в начало списка
             allUsers.unshift(newUser);
-            
-            // Возвращаемся на первую страницу
             currentPage = 1;
             
-            // Обновляем таблицу и пагинацию
             renderUsersTable();
             setupPagination();
+            updateAdminPanelHeader();
             
-            // Закрываем модальное окно
             const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
             if (modal) {
                 modal.hide();
@@ -467,14 +578,7 @@ function createNewUser() {
             
             showNotification('✅ Пользователь успешно создан!', 'success');
         },
-        error: function(xhr, status, error) {
-            console.error('Ошибка при создании пользователя:', {
-                status: xhr.status,
-                statusText: xhr.statusText,
-                responseText: xhr.responseText,
-                error: error
-            });
-            
+        error: function(xhr) {
             let errorMsg = 'Неизвестная ошибка';
             
             if (xhr.responseJSON && xhr.responseJSON.error) {
@@ -487,18 +591,8 @@ function createNewUser() {
                 errorMsg = 'Доступ запрещен';
             } else if (xhr.status === 404) {
                 errorMsg = 'Эндпоинт не найден';
-            } else if (xhr.status === 405) {
-                errorMsg = 'Метод не разрешен';
             } else if (xhr.status === 409) {
                 errorMsg = 'Пользователь с таким email уже существует';
-            } else if (xhr.responseText) {
-                // Попробуем получить текст ошибки
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    errorMsg = response.error || errorMsg;
-                } catch (e) {
-                    errorMsg = xhr.responseText || errorMsg;
-                }
             }
             
             showNotification('❌ Ошибка: ' + errorMsg, 'danger');
@@ -510,8 +604,7 @@ function createNewUser() {
 }
 
 /**
- * Обрабатывает сохранение изменений пользователя.
- * Собирает данные из формы, валидирует их и отправляет на сервер.
+ * Сохраняет изменения пользователя
  */
 function saveUserChanges() {
     const userId = $('#edit-user-id').val();
@@ -525,8 +618,7 @@ function saveUserChanges() {
         email: $('#edit-email').val().trim(),
         birthDate: $('#edit-birthdate').val(),
         role: $('#edit-role').val(),
-        bannedStatus: $('#edit-banned').prop('checked'),
-        preserveVisits: true
+        bannedStatus: $('#edit-banned').prop('checked')
     };
     
     if (!userData.fullName) {
@@ -562,8 +654,48 @@ function saveUserChanges() {
 }
 
 /**
- * Удаляет пользователя после подтверждения.
- * Отправляет запрос на удаление и обновляет таблицу.
+ * Отправляет запрос на обновление данных
+ */
+function sendUpdateRequest(userId, userData) {
+    const $saveBtn = $('#save-user-btn');
+    const originalText = $saveBtn.text();
+    $saveBtn.prop('disabled', true).text('Сохранение...');
+    
+    $.ajax({
+        url: `/api/users/${userId}/admin-update`,
+        method: "PUT",
+        contentType: "application/json",
+        data: JSON.stringify(userData),
+        success: function(updatedUser) {
+            const index = allUsers.findIndex(u => u.id == userId);
+            if (index !== -1) {
+                allUsers[index] = updatedUser;
+            }
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            renderUsersTable();
+            showNotification('✅ Пользователь успешно обновлен!', 'success');
+        },
+        error: function(xhr) {
+            let errorMsg = 'Неизвестная ошибка';
+            if (xhr.responseJSON && xhr.responseJSON.error) {
+                errorMsg = xhr.responseJSON.error;
+            }
+            
+            showNotification('❌ Ошибка: ' + errorMsg, 'danger');
+        },
+        complete: function() {
+            $saveBtn.prop('disabled', false).text(originalText);
+        }
+    });
+}
+
+/**
+ * Удаляет пользователя
  */
 function deleteUser() {
     const userId = $('#edit-user-id').val();
@@ -574,7 +706,7 @@ function deleteUser() {
         return;
     }
     
-    if (!confirm('Вы уверены, что хотите удалить этого пользователя? Это действие нельзя отменить.')) {
+    if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
         return;
     }
     
@@ -591,6 +723,7 @@ function deleteUser() {
             
             renderUsersTable();
             setupPagination();
+            updateAdminPanelHeader();
             showNotification('✅ Пользователь успешно удален!', 'success');
         },
         error: function(xhr) {
@@ -602,9 +735,7 @@ function deleteUser() {
 }
 
 /**
- * Возвращает читаемое название роли пользователя.
- * @param {string} role - Код роли (admin, moder, user)
- * @returns {string} Отображаемое название роли
+ * Возвращает читаемое название роли
  */
 function getRoleDisplayName(role) {
     switch(role) {
@@ -614,26 +745,3 @@ function getRoleDisplayName(role) {
         default: return 'Гость';
     }
 }
-
-/**
- * Инициализация админ-панели при загрузке страницы.
- * Проверяет авторизацию и настраивает обработчики вкладок.
- */
-$(document).ready(function() {
-    if ($('#admin-panel').length > 0) {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (user.role === 'admin') {
-            $('#admin-tab').on('shown.bs.tab', function(e) {
-                initAdminPanel();
-            });
-            
-            if ($('#admin-tab').hasClass('active')) {
-                setTimeout(function() {
-                    initAdminPanel();
-                }, 100);
-            }
-        } else {
-            $('#admin-tab').hide();
-        }
-    }
-});
