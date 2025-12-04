@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание аукциона</title>
+    <script src="../library/jquery-3.7.1.min.js" defer></script>
+    <script src="../library/bootstrap.bundle.min.js" defer></script>
+    <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+    <link href="../style/create-auction.css" rel="stylesheet" type="text/css"/>
+    <script src="../js/create-auction.js" defer></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <span class="navbar-brand">Аукцион</span>
+            <div class="navbar-nav ms-auto">
+                <a href="auctions.html" class="nav-link">К аукционам</a>
+                <a href="user-cabinet.html" class="nav-link">Личный кабинет</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Создание нового аукциона</h2>
+        
+        <div class="card mt-4">
+            <div class="card-body">
+                <form id="create-auction-form" class="auction-form" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Название аукциона *</label>
+                                <input type="text" class="form-control" id="title" required 
+                                       placeholder="Например: Apple iPhone 15 Pro Max 256GB">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Описание</label>
+                                <textarea class="form-control" id="description" rows="4" 
+                                          placeholder="Подробное описание товара..."></textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="startPrice" class="form-label">Начальная цена (₽) *</label>
+                                        <input type="number" class="form-control" id="startPrice" 
+                                               min="0" step="0.01" required value="1000">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="step" class="form-label">Шаг ставки (₽) *</label>
+                                        <input type="number" class="form-control" id="step" 
+                                               min="10" step="10" required value="100">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="startTime" class="form-label">Дата и время начала</label>
+                                        <input type="datetime-local" class="form-control" id="startTime" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="endTime" class="form-label">Дата и время окончания *</label>
+                                        <input type="datetime-local" class="form-control" id="endTime" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Категория</label>
+                                <select class="form-control" id="category">
+                                    <option value="electronics">Электроника</option>
+                                    <option value="clothing">Одежда</option>
+                                    <option value="books">Книги</option>
+                                    <option value="collectibles">Коллекционные предметы</option>
+                                    <option value="art">Искусство</option>
+                                    <option value="other">Другое</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="image" class="form-label">Изображение товара</label>
+                                <input type="file" class="form-control" id="image" accept="image/*">
+                                <div class="form-text">JPG, PNG до 5MB</div>
+                            </div>
+                            
+                            <div id="image-preview-container" class="mb-3">
+                                <img id="image-preview" class="img-fluid rounded image-preview" 
+                                     src="https://via.placeholder.com/300x200?text=Предпросмотр" 
+                                     alt="Предпросмотр изображения">
+                                <button type="button" class="btn btn-sm btn-danger mt-2" 
+                                        id="remove-image-btn">Удалить изображение</button>
+                            </div>
+                            
+                            <div class="mt-4 p-3 bg-light rounded">
+                                <h6>Информация:</h6>
+                                <ul class="small">
+                                    <li>Аукцион автоматически начнется в указанное время</li>
+                                    <li>Минимальный шаг ставки - 10 рублей</li>
+                                    <li>Можно загрузить одно изображение товара</li>
+                                    <li>Поля отмеченные * обязательны к заполнению</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button type="button" class="btn btn-secondary" id="cancel-btn">
+                            Отмена
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            Создать аукцион
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомление об ошибке -->
+    <div id="error-toast" class="position-fixed top-0 end-0 p-3" style="z-index: 9999; display: none;">
+        <div class="toast" role="alert" style="min-width: 300px;">
+            <div class="toast-header bg-danger text-white">
+                <strong class="me-auto">Ошибка</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="error-message"></div>
+        </div>
+    </div>
+
+    <!-- Уведомление об успехе -->
+    <div id="success-toast" class="position-fixed top-0 end-0 p-3" style="z-index: 9999; display: none;">
+        <div class="toast" role="alert" style="min-width: 300px;">
+            <div class="toast-header bg-success text-white">
+                <strong class="me-auto">Успех!</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="success-message"></div>
+        </div>
+    </div>
+</body>
+</html>
