@@ -1,6 +1,5 @@
 $('.auth-tab').on('click', function() {
     const tab = $(this).data('tab');
-    console.log(tab);
     $('.auth-tab').removeClass('active');
     $(this).addClass('active');
 
@@ -54,7 +53,7 @@ $('#login-form').on('submit', function(e) {
 
 $('#register-form').on('submit', function(e) {
     e.preventDefault();
-
+    $(".error").text("");
     const formData = new FormData();
     formData.append('email', $('#register-email').val());
     formData.append('fullName', $('#register-name').val());
