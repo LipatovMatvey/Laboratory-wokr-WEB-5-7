@@ -133,7 +133,7 @@ public class AuthService {
 
     /**
      * Определяет текущего авторизованного пользователя по userId из сессии
-     * @param session текущая HTTP - сессия
+     * @param session текущая HTTP-сессия
      * @return UserDto:
      *          - авторизованный пользователь, если userId существует и валиден;
      *          - гость (authenticated = false), если пользователь не найден или userId нет.
