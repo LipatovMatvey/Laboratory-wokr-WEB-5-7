@@ -1,325 +1,338 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аукцион - Личный кабинет</title>
-    <script src="../library/jquery-3.7.1.min.js" defer></script>
-    <link href="../style/main.css" rel="stylesheet" type="text/css"/>
-    <link href="../style/admin_panel.css" rel="stylesheet" type="text/css"/>
-    <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
-    <script src="../library/bootstrap.bundle.min.js" defer></script>
-    <script src="../js/user-cabinet.js" defer></script>
-    <script src="../js/admin-panel.js" defer></script>
-    
-</head>
-<body>
-<!-- Навигация -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <span class="navbar-brand">Аукцион</span>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="main.html">Главная</a>
+    <head>
+        <title>Аукцион - Личный кабинет</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="../library/jquery-3.7.1.min.js" defer></script>
+        <link href="../style/main.css" rel="stylesheet" type="text/css"/>
+        <link href="../style/balance.css" rel="stylesheet" type="text/css"/>
+        <link href="../style/avatar.css" rel="stylesheet" type="text/css"/>
+        <link href="../style/admin_panel.css" rel="stylesheet" type="text/css"/>
+        <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+        <script src="../library/bootstrap.bundle.min.js" defer></script>
+        <script src="../js/user-cabinet.js" defer></script>
+        <script src="../js/admin-panel.js" defer></script>
+
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <span class="navbar-brand">Аукцион</span>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="main.html">Главная</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="auctions.html">Аукционы</a>
+                        </li>
+                        <li id="user-cabinet-item" class="nav-item">
+                            <a class="nav-link active" href="user-cabinet.html">Личный кабинет</a>
+                        </li>
+                        <li id="admin-panel-item" class="nav-item hidden">
+                            <a class="nav-link" href="#admin-panel">Панель администратора</a>
+                        </li>
+                    </ul>
+                    <div class="navbar-nav align-items-center">
+                        <span id="server-time" class="navbar-text me-3"></span>
+                        <span id="user-info" class="navbar-text me-3"></span>
+                        <span id="user-role" class="navbar-text me-3"></span>
+
+                        <!-- Кнопка Войти -->
+                        <div id="login-item" class="nav-item hidden">
+                            <a href="auth.html" class="btn btn-outline-light btn-sm me-2">Войти</a>
+                        </div>
+
+                        <!-- Кнопка Выйти -->
+                        <div id="logout-item" class="nav-item hidden">
+                            <button id="logout-btn" class="btn btn-outline-light btn-sm">Выйти</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            <h2 class="mb-4">Личный кабинет</h2>
+
+            <ul class="nav nav-tabs mb-4" id="cabinetTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">Мой профиль</button>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="auctions.html">Аукционы</a>
-                </li>
-                <li id="user-cabinet-item" class="nav-item">
-                    <a class="nav-link active" href="user-cabinet.html">Личный кабинет</a>
-                </li>
-                <li id="admin-panel-item" class="nav-item hidden">
-                    <a class="nav-link" href="#admin-panel">Панель администратора</a>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-panel" type="button" role="tab" style="display: none;">Панель администратора</button>
                 </li>
             </ul>
-            <div class="navbar-nav align-items-center">
-                <span id="user-info" class="navbar-text me-3"></span>
-                <span id="user-role" class="navbar-text me-3"></span>
 
-                <!-- Кнопка Войти -->
-                <div id="login-item" class="nav-item hidden">
-                    <a href="auth.html" class="btn btn-outline-light btn-sm me-2">Войти</a>
-                </div>
-
-                <!-- Кнопка Выйти -->
-                <div id="logout-item" class="nav-item hidden">
-                    <button id="logout-btn" class="btn btn-outline-light btn-sm">Выйти</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</nav>
-
-<div class="container mt-4">
-    <h2 class="mb-4">Личный кабинет</h2>
-    
-    <!-- Вкладки -->
-    <ul class="nav nav-tabs mb-4" id="cabinetTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">Мой профиль</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-panel" type="button" role="tab" style="display: none;">Панель администратора</button>
-        </li>
-    </ul>
-
-    <div class="tab-content" id="cabinetTabsContent">
-        <!-- Вкладка профиля -->
-        <div class="tab-pane fade show active" id="profile" role="tabpanel">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5>Мой профиль</h5>
+            <div class="tab-content" id="cabinetTabsContent">
+                <!-- Вкладка профиля -->
+                <div class="tab-pane fade show active" id="profile" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5>Мой профиль</h5>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div id="avatar-preview-container">
+                                        <img id="user-avatar-preview" src="/uploads/avatars/img.png" 
+                                             class="rounded-circle mb-3" width="100" height="100" alt="Аватар">
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="file" id="avatar-upload" accept="image/*" class="form-control form-control-sm">
+                                        <small class="text-muted">JPG, PNG до 5MB</small>
+                                        <div id="avatar-file-info" class="small text-info mt-1" style="display: none;"></div>
+                                    </div>
+                                    <button type="button" id="remove-avatar-btn" class="btn btn-outline-danger btn-sm mb-3" style="display: none;">
+                                        Удалить фото
+                                    </button>
+                                    <div class="balance-card mt-4 p-3 bg-light rounded">
+                                        <h6 class="mb-3">Ваш баланс</h6>
+                                        <div class="balance-amount mb-3">
+                                            <span class="balance-value fs-3 fw-bold" id="user-balance">0.00</span>
+                                            <span class="balance-currency"> ₽</span>
+                                        </div>
+                                        <button type="button" class="btn btn-success w-100" id="add-balance-btn">
+                                            <i class="bi bi-plus-circle me-2"></i>
+                                            Пополнить баланс на 10,000 ₽
+                                        </button>
+                                        <small class="text-muted d-block mt-2">Нажмите чтобы пополнить баланс</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body text-center">
-                            <img id="user-avatar" src="https://via.placeholder.com/100x100" 
-                                 class="rounded-circle mb-3" width="100" height="100" alt="Аватар">
-                            <div class="mb-3">
-                                <input type="file" id="avatar-upload" accept="image/*" class="form-control form-control-sm">
-                                <small class="text-muted">JPG, PNG до 5MB</small>
+                        <div class="col-md-8">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5>Мои данные</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="user-data-form">
+                                        <div class="mb-3">
+                                            <label for="user-name" class="form-label">Имя *</label>
+                                            <input type="text" class="form-control" id="user-name" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="user-email" class="form-label">Email *</label>
+                                            <input type="email" class="form-control" id="user-email" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="user-birthdate" class="form-label">Дата рождения</label>
+                                            <input type="date" class="form-control" id="user-birthdate">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Роль</label>
+                                            <div class="form-control-plaintext" id="display-role"></div>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary">
+                                            Сохранить изменения
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5>Мои ставки</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="user-bids">
+                                        <p class="text-muted">У вас пока нет ставок</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Выигранные лоты</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="won-lots">
+                                        <p class="text-muted">У вас пока нет выигранных лотов</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-8">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5>Мои данные</h5>
-                        </div>
-                        <div class="card-body">
-                            <form id="user-data-form">
-                                <div class="mb-3">
-                                    <label for="user-name" class="form-label">Имя *</label>
-                                    <input type="text" class="form-control" id="user-name" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="user-email" class="form-label">Email *</label>
-                                    <input type="email" class="form-control" id="user-email" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="user-birthdate" class="form-label">Дата рождения</label>
-                                    <input type="date" class="form-control" id="user-birthdate">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Роль</label>
-                                    <div class="form-control-plaintext" id="display-role"></div>
-                                </div>
 
-                                <button type="submit" class="btn btn-primary">
-                                    Сохранить изменения
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5>Мои ставки</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="user-bids">
-                                <p class="text-muted">У вас пока нет ставок</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
+                <div class="tab-pane fade" id="admin-panel" role="tabpanel">
                     <div class="card">
                         <div class="card-header">
-                            <h5>Выигранные лоты</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="won-lots">
-                                <p class="text-muted">У вас пока нет выигранных лотов</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка админ-панели -->
-        <div class="tab-pane fade" id="admin-panel" role="tabpanel">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Управление пользователями</h5>
-                        <div class="d-flex gap-2">
-                            <a href="create-auction.html" class="btn btn-primary btn-sm">
-                                <i class="bi bi-plus-circle me-1"></i> Создать аукцион
-                            </a>
-                            <button id="create-user-btn" class="btn btn-success btn-sm">
-                                <i class="bi bi-person-plus me-1"></i> Создать пользователя
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Простая таблица без фильтров -->
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Имя</th>
-                                    <th>Email</th>
-                                    <th>Пароль</th>
-                                    <th>Дата рождения</th>
-                                    <th>Посещения</th>
-                                    <th>Роль</th>
-                                    <th>Статус</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body">
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted">
-                                        Загрузка данных...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Пагинация -->
-                    <nav>
-                        <ul class="pagination justify-content-center" id="pagination">
-                            <!-- Пагинация будет добавлена через JS -->
-                        </ul>
-                    </nav>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для редактирования пользователя -->
-<div class="modal fade" id="editUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Редактирование пользователя</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="edit-user-form">
-                    <input type="hidden" id="edit-user-id">
-                    <div class="mb-3">
-                        <label for="edit-fullname" class="form-label">Имя</label>
-                        <input type="text" class="form-control" id="edit-fullname" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="edit-email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-password" class="form-label">Пароль</label>
-                        <input type="text" class="form-control" id="edit-password" placeholder="Оставьте пустым, чтобы не менять">
-                        <small class="text-muted">Минимум 6 символов</small>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-birthdate" class="form-label">Дата рождения</label>
-                        <input type="date" class="form-control" id="edit-birthdate">
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-role" class="form-label">Роль</label>
-                        <select class="form-control" id="edit-role" required>
-                            <option value="user">Пользователь</option>
-                            <option value="moder">Модератор</option>
-                            <option value="admin">Администратор</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="edit-banned">
-                        <label class="form-check-label" for="edit-banned">Заблокирован</label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-danger" id="delete-user-btn">Удалить</button>
-                <button type="button" class="btn btn-primary" id="save-user-btn">Сохранить изменения</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для создания нового пользователя -->
-<div class="modal fade" id="createUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Создание нового пользователя</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="new-user-form">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <!-- Блок для аватара -->
-                            <div id="new-user-avatar-preview" class="mb-3">
-                                <div class="text-center">
-                                    <img src="https://via.placeholder.com/150x150?text=Аватар" 
-                                         class="rounded-circle mb-2" width="150" height="150" alt="Предпросмотр аватара" 
-                                         id="new-user-avatar-img">
-                                    <div class="text-muted small">Аватар пользователя</div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Управление пользователями</h5>
+                                <div class="d-flex gap-2">
+                                    <a href="create-auction.html" class="btn btn-primary btn-sm">
+                                        <i class="bi bi-plus-circle me-1"></i> Создать аукцион
+                                    </a>
+                                    <button id="create-user-btn" class="btn btn-success btn-sm">
+                                        <i class="bi bi-person-plus me-1"></i> Создать пользователя
+                                    </button>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="new-user-avatar" class="form-label">Загрузить аватар</label>
-                                <input type="file" class="form-control" id="new-user-avatar" accept="image/*">
-                                <div class="form-text">JPG, PNG до 5MB (опционально)</div>
-                                <div id="new-user-avatar-file-info" class="small text-info mt-1" style="display: none;"></div>
-                            </div>
                         </div>
-                        <div class="col-md-7">
-                            <!-- Поля для данных -->
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Имя</th>
+                                            <th>Email</th>
+                                            <th>Пароль</th>
+                                            <th>Дата рождения</th>
+                                            <th>Посещения</th>
+                                            <th>Роль</th>
+                                            <th>Статус</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body">
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted">
+                                                Загрузка данных...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <nav>
+                                <ul class="pagination justify-content-center" id="pagination">
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editUserModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Редактирование пользователя</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="edit-user-form">
+                            <input type="hidden" id="edit-user-id">
                             <div class="mb-3">
-                                <label for="new-user-fullname" class="form-label">Имя *</label>
-                                <input type="text" class="form-control" id="new-user-fullname" required>
+                                <label for="edit-fullname" class="form-label">Имя</label>
+                                <input type="text" class="form-control" id="edit-fullname" required>
                             </div>
                             <div class="mb-3">
-                                <label for="new-user-email" class="form-label">Email *</label>
-                                <input type="email" class="form-control" id="new-user-email" required>
+                                <label for="edit-email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="edit-email" required>
                             </div>
                             <div class="mb-3">
-                                <label for="new-user-password" class="form-label">Пароль *</label>
-                                <input type="text" class="form-control" id="new-user-password" required>
-                                <div class="form-text">Минимум 6 символов</div>
+                                <label for="edit-password" class="form-label">Пароль</label>
+                                <input type="text" class="form-control" id="edit-password" placeholder="Оставьте пустым, чтобы не менять">
+                                <small class="text-muted">Минимум 6 символов</small>
                             </div>
                             <div class="mb-3">
-                                <label for="new-user-birthdate" class="form-label">Дата рождения</label>
-                                <input type="date" class="form-control" id="new-user-birthdate">
+                                <label for="edit-birthdate" class="form-label">Дата рождения</label>
+                                <input type="date" class="form-control" id="edit-birthdate">
                             </div>
                             <div class="mb-3">
-                                <label for="new-user-role" class="form-label">Роль *</label>
-                                <select class="form-control" id="new-user-role" required>
-                                    <option value="user" selected>Пользователь</option>
+                                <label for="edit-role" class="form-label">Роль</label>
+                                <select class="form-control" id="edit-role" required>
+                                    <option value="user">Пользователь</option>
                                     <option value="moder">Модератор</option>
                                     <option value="admin">Администратор</option>
                                 </select>
                             </div>
                             <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="new-user-banned">
-                                <label class="form-check-label" for="new-user-banned">Заблокирован при создании</label>
+                                <input type="checkbox" class="form-check-input" id="edit-banned">
+                                <label class="form-check-label" for="edit-banned">Заблокирован</label>
                             </div>
-                        </div>
+                        </form>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="save-new-user-btn">Создать пользователя</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-danger" id="delete-user-btn">Удалить</button>
+                        <button type="button" class="btn btn-primary" id="save-user-btn">Сохранить изменения</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-</body>
+
+        <div class="modal fade" id="createUserModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Создание нового пользователя</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="new-user-form">
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <!-- Блок для аватара -->
+                                    <div id="new-user-avatar-preview" class="mb-3">
+                                        <div class="text-center">
+                                            <img src="/uploads/avatars/img.png" 
+                                                 class="rounded-circle mb-2" width="150" height="150" alt="Предпросмотр аватара" 
+                                                 id="new-user-avatar-img">
+                                            <div class="text-muted small">Аватар пользователя</div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new-user-avatar" class="form-label">Загрузить аватар</label>
+                                        <input type="file" class="form-control" id="new-user-avatar" accept="image/*">
+                                        <div class="form-text">JPG, PNG до 5MB (опционально)</div>
+                                        <div id="new-user-avatar-file-info" class="small text-info mt-1" style="display: none;"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-7">
+                                    <!-- Поля для данных -->
+                                    <div class="mb-3">
+                                        <label for="new-user-fullname" class="form-label">Имя *</label>
+                                        <input type="text" class="form-control" id="new-user-fullname" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new-user-email" class="form-label">Email *</label>
+                                        <input type="email" class="form-control" id="new-user-email" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new-user-password" class="form-label">Пароль *</label>
+                                        <input type="text" class="form-control" id="new-user-password" required>
+                                        <div class="form-text">Минимум 6 символов</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new-user-birthdate" class="form-label">Дата рождения</label>
+                                        <input type="date" class="form-control" id="new-user-birthdate">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new-user-role" class="form-label">Роль *</label>
+                                        <select class="form-control" id="new-user-role" required>
+                                            <option value="user" selected>Пользователь</option>
+                                            <option value="moder">Модератор</option>
+                                            <option value="admin">Администратор</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="new-user-banned">
+                                        <label class="form-check-label" for="new-user-banned">Заблокирован при создании</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" id="save-new-user-btn">Создать пользователя</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
 </html>

@@ -20,15 +20,37 @@ import java.util.Map;
 @RequestMapping("/api/auctions")
 public class AuctionController {
 
+    /**
+     * Сервис для работы с аукционами.
+     */
     @Autowired
     private AuctionService auctionService;
 
+    /**
+     *
+     * @param ex
+     * @return
+     */
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleError(RuntimeException ex) {
         return Map.of("error", ex.getMessage());
     }
 
+    /**
+     * Создает новый аукцион.
+     *
+     * @param title - название лота
+     * @param description - подробное описание лота
+     * @param startPrice - начальная цена лота
+     * @param step - минимальный шаг ставки
+     * @param startTime - время начала аукциона
+     * @param endTime - время окончания аукциона
+     * @param category - категория лота
+     * @param image - изображение лота (необязательно)
+     * @param session - текущая HTTP-сессия для проверки авторизации
+     * @return - созданный аукцион или сообщение об ошибке
+     */
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createAuction(
             @RequestParam("title") String title,
@@ -61,11 +83,22 @@ public class AuctionController {
         }
     }
 
+    /**
+     * Получает список активных аукционов.
+     *
+     * @return - список DTO активных аукционов
+     */
     @GetMapping("/active")
     public List<AuctionDTO> getActiveAuctions() {
         return auctionService.getActiveAuctions();
     }
 
+    /**
+     * Получает информацию об аукционе по его ID.
+     *
+     * @param id - уникальный идентификатор аукциона
+     * @return - DTO аукциона или сообщение об ошибке, если аукцион не найден
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> getAuctionById(@PathVariable Long id) {
         try {
@@ -77,6 +110,12 @@ public class AuctionController {
         }
     }
 
+    /**
+     * Получает список аукционов, созданных текущим пользователем.
+     *
+     * @param session - текущая HTTP-сессия для определения пользователя
+     * @return - список DTO аукционов пользователя или сообщение об ошибке
+     */
     @GetMapping("/my")
     public ResponseEntity<?> getUserAuctions(HttpSession session) {
         try {

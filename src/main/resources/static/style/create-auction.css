@@ -1,4 +1,3 @@
-/* create-auction.css */
 .hidden {
     display: none !important;
 }
@@ -94,7 +93,6 @@
     line-height: 1.4;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .auction-form {
         padding: 0 10px;
@@ -114,7 +112,6 @@
     }
 }
 
-/* Анимации */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -138,7 +135,6 @@
     font-weight: 600;
 }
 
-/* Кастомный стиль для input file */
 input[type="file"] {
     cursor: pointer;
 }
@@ -157,13 +153,11 @@ input[type="file"]::file-selector-button:hover {
     background-color: #0b5ed7;
 }
 
-/* Стиль для disabled кнопок */
 .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-/* Стили для валидации */
 .is-invalid {
     border-color: #dc3545 !important;
 }
@@ -179,14 +173,12 @@ input[type="file"]::file-selector-button:hover {
     margin-top: 0.25rem;
 }
 
-/* Стили для тултипов */
 .tooltip {
     font-size: 0.875rem;
 }
 
-/* Улучшение отображения select */
 select.form-control {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+/*    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");*/
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     background-size: 16px 12px;
@@ -196,19 +188,16 @@ select.form-control {
     appearance: none;
 }
 
-/* Стиль для текстового поля */
 textarea.form-control {
     resize: vertical;
     min-height: 100px;
 }
 
-/* Стиль для placeholder */
 ::placeholder {
     color: #6c757d !important;
     opacity: 0.7;
 }
 
-/* Стиль для ссылок навигации */
 .nav-link {
     font-weight: 500;
     padding: 8px 16px;
@@ -220,7 +209,6 @@ textarea.form-control {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Стиль для заголовка */
 h2 {
     color: #343a40;
     font-weight: 600;

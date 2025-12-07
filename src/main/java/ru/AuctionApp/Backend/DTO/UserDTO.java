@@ -10,15 +10,55 @@ import ru.AuctionApp.Backend.Entity.User;
  */
 @Data
 public class UserDTO {
+    /**
+     * Флаг, указывающий, авторизован ли пользователь
+     */
     private boolean authenticated;
+
+    /**
+     * Идентификатор пользователя
+     */
     private Long id;
+
+    /**
+     * Полное имя пользователя
+     */
     private String fullName;
+
+    /**
+     * Электронная почта пользователя
+     */
     private String email;
+
+    /**
+     * Количество посещений пользователя
+     */
     private int visits;
+
+    /**
+     * Роль пользователя ("admin", "moder", "user", "guest")
+     */
     private String role;
+
+    /**
+     * URL-адрес аватара пользователя
+     */
     private String avatarUrl;
+
+    /**
+     * Дата рождения пользователя
+     */
     private String birthdate;
+
+    /**
+     * Статус блокировки пользователя
+     */
     private boolean bannedStatus;
+
+    /**
+     * Баланс пользователя
+     */
+    private double balance;
 
     /**
      * Конструктор с параметром
@@ -34,6 +74,7 @@ public class UserDTO {
         this.avatarUrl = u.getAvatarPath();
         this.birthdate = u.getBirthDate();
         this.bannedStatus = u.isBannedStatus();
+        this.balance = u.getBalance();
     }
 
     /**
@@ -46,5 +87,6 @@ public class UserDTO {
         this.email = null;
         this.visits = 0;
         this.role = "guest";
+        this.balance = 0.0;
     }
 }

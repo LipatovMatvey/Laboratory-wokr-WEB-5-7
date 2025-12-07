@@ -1,17 +1,10 @@
-// admin-panel.js - ЗАМЕНИТЕ весь файл на этот код
-
 let allUsers = [];
 let currentPage = 1;
 const usersPerPage = 10;
 
-// Основная инициализация при загрузке DOM
 $(document).ready(function() {
     console.log('admin-panel.js загружен');
-    
-    // Проверяем, авторизован ли пользователь как администратор
     checkAdminAccess();
-    
-    // Назначаем обработчики событий через делегирование
     setupEventHandlers();
 });
 
@@ -20,18 +13,13 @@ $(document).ready(function() {
  */
 function checkAdminAccess() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
     if (user.role === 'admin') {
         console.log('Пользователь является администратором');
         $('#admin-tab').show();
-        
-        // Инициализируем при переключении на вкладку
         $('#admin-tab').on('shown.bs.tab', function() {
             console.log('Активирована вкладка админ-панели');
             initAdminPanel();
         });
-        
-        // Инициализируем сразу, если вкладка уже активна
         if ($('#admin-tab').hasClass('active')) {
             console.log('Вкладка админ-панели уже активна, инициализируем');
             setTimeout(initAdminPanel, 100);
@@ -46,39 +34,28 @@ function checkAdminAccess() {
  * Настраивает обработчики событий
  */
 function setupEventHandlers() {
-    // Обработчик для кнопки создания пользователя
     $(document).on('click', '#create-user-btn', function(e) {
         e.preventDefault();
         console.log('Кнопка "Создать пользователя" нажата');
         showCreateUserModal();
     });
-    
-    // Обработчик для кнопки сохранения нового пользователя
     $(document).on('click', '#save-new-user-btn', function(e) {
         e.preventDefault();
         createNewUser();
     });
-    
-    // Обработчик для кнопки сохранения изменений
     $(document).on('click', '#save-user-btn', function(e) {
         e.preventDefault();
         saveUserChanges();
     });
-    
-    // Обработчик для кнопки удаления пользователя
     $(document).on('click', '#delete-user-btn', function(e) {
         e.preventDefault();
         deleteUser();
     });
-    
-    // Обработчик загрузки аватара
     $(document).on('change', '#new-user-avatar', function(e) {
         if (e.target.files && e.target.files[0]) {
             previewNewUserAvatar(e.target.files[0]);
         }
     });
-    
-    // Обработчик кликов по строкам таблицы (делегирование)
     $(document).on('click', '.user-row', function(e) {
         if ($(e.target).closest('.toggle-password-btn, .toggle-ban-btn').length > 0) {
             return;
@@ -86,14 +63,11 @@ function setupEventHandlers() {
         const userId = $(this).data('user-id');
         openEditModal(userId);
     });
-    
-    // Обработчик кнопок показа/скрытия пароля
     $(document).on('click', '.toggle-password-btn', function(e) {
         e.stopPropagation();
         const $button = $(this);
         const $span = $button.siblings('.password-field');
         const password = $button.data('password') || '';
-        
         if ($span.text().includes('*')) {
             $span.text(password);
             $button.html('<i class="bi bi-eye-slash"></i>');
@@ -102,8 +76,6 @@ function setupEventHandlers() {
             $button.html('<i class="bi bi-eye"></i>');
         }
     });
-    
-    // Обработчик кнопок блокировки/разблокировки
     $(document).on('click', '.toggle-ban-btn', function(e) {
         e.stopPropagation();
         const userId = $(this).data('user-id');
@@ -141,7 +113,6 @@ function updateAdminPanelHeader() {
             </div>
         </div>
     `;
-    
     $('.card-header:has(h5:contains("Управление пользователями"))').html(headerHtml);
 }
 
@@ -159,14 +130,12 @@ function loadAllUsers() {
             </td>
         </tr>
     `);
-    
     $.ajax({
         url: "/api/users/all",
         method: "GET",
         success: function(users) {
             const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
             allUsers = users.filter(user => user.id !== currentUser.id);
-            
             renderUsersTable();
             setupPagination();
             updateAdminPanelHeader();
@@ -198,7 +167,6 @@ function renderUsersTable() {
     const startIndex = (currentPage - 1) * usersPerPage;
     const endIndex = startIndex + usersPerPage;
     const pageUsers = allUsers.slice(startIndex, endIndex);
-    
     if (pageUsers.length === 0) {
         $tbody.html(`
             <tr>
@@ -210,7 +178,6 @@ function renderUsersTable() {
         `);
         return;
     }
-    
     let html = '';
     pageUsers.forEach(user => {
         const statusClass = user.bannedStatus ? 'text-danger' : 'text-success';
@@ -221,7 +188,6 @@ function renderUsersTable() {
         const avatar = user.avatarPath || user.avatarUrl || '/uploads/avatars/img.png';
         const visits = user.visits || 0;
         const email = user.email || 'Не указан';
-        
         html += `
             <tr class="user-row" data-user-id="${user.id}" style="cursor: pointer;">
                 <td class="user-id-cell">
@@ -282,7 +248,6 @@ function renderUsersTable() {
             </tr>
         `;
     });
-    
     $tbody.html(html);
 }
 
@@ -292,15 +257,11 @@ function renderUsersTable() {
 function setupPagination() {
     const totalPages = Math.ceil(allUsers.length / usersPerPage);
     const $pagination = $('#pagination');
-    
     if (totalPages <= 1) {
         $pagination.html('');
         return;
     }
-    
     let html = '';
-    
-    // Кнопка "Назад"
     html += `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
             <a class="page-link" href="#" data-page="${currentPage - 1}">
@@ -308,8 +269,6 @@ function setupPagination() {
             </a>
         </li>
     `;
-    
-    // Номера страниц
     for (let i = 1; i <= totalPages; i++) {
         if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
             html += `
@@ -321,8 +280,6 @@ function setupPagination() {
             html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
         }
     }
-    
-    // Кнопка "Вперед"
     html += `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
             <a class="page-link" href="#" data-page="${currentPage + 1}">
@@ -330,10 +287,7 @@ function setupPagination() {
             </a>
         </li>
     `;
-    
     $pagination.html(html);
-    
-    // Обработчики кликов по пагинации
     $pagination.find('.page-link').off('click').on('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -377,7 +331,6 @@ function toggleUserBan(userId, banned, $row) {
     if (!confirm(banned ? 'Заблокировать пользователя?' : 'Разблокировать пользователя?')) {
         return;
     }
-    
     $.ajax({
         url: `/api/users/${userId}/ban`,
         method: "POST",
@@ -388,7 +341,6 @@ function toggleUserBan(userId, banned, $row) {
             if (index !== -1) {
                 allUsers[index].bannedStatus = banned;
             }
-            
             renderUsersTable();
             showNotification(
                 banned ? '✅ Пользователь заблокирован' : '✅ Пользователь разблокирован',
@@ -407,7 +359,6 @@ function toggleUserBan(userId, banned, $row) {
  */
 function showNotification(message, type = 'info') {
     $('.notification-toast').remove();
-    
     const alertClass = type === 'success' ? 'alert-success' : 
                       type === 'danger' ? 'alert-danger' : 
                       type === 'warning' ? 'alert-warning' : 'alert-info';
@@ -425,9 +376,7 @@ function showNotification(message, type = 'info') {
             </div>
         </div>
     `);
-    
     $('body').append($toast);
-    
     setTimeout(() => {
         $toast.remove();
     }, 4000);
@@ -442,7 +391,6 @@ function openEditModal(userId) {
         showNotification('Ошибка: Пользователь не найден', 'danger');
         return;
     }
-    
     $('#edit-user-id').val(user.id);
     $('#edit-fullname').val(user.fullName || '');
     $('#edit-email').val(user.email || '');
@@ -450,7 +398,6 @@ function openEditModal(userId) {
     $('#edit-birthdate').val(user.birthDate || '');
     $('#edit-role').val(user.role || 'user');
     $('#edit-banned').prop('checked', user.bannedStatus || false);
-    
     $('#editUserModal .modal-title').html(`
         <div class="d-flex align-items-center">
             <i class="bi bi-person-gear me-2"></i>
@@ -460,7 +407,6 @@ function openEditModal(userId) {
             </div>
         </div>
     `);
-    
     const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
     editModal.show();
 }
@@ -470,21 +416,17 @@ function openEditModal(userId) {
  */
 function showCreateUserModal() {
     console.log('Открытие модального окна создания пользователя');
-    
-    // Сброс формы
     $('#new-user-form')[0].reset();
     $('#new-user-avatar-preview').html(`
         <div class="text-center">
-            <img src="https://via.placeholder.com/150x150?text=Аватар" 
+            <img src="/uploads/avatars/img.png" 
                  class="rounded-circle mb-2" width="150" height="150" alt="Предпросмотр аватара" 
                  id="new-user-avatar-img">
             <div class="text-muted small">Аватар пользователя</div>
         </div>
     `);
-    
     $('#new-user-avatar-file-info').hide();
     $('#new-user-avatar').val('');
-    
     const createModal = new bootstrap.Modal(document.getElementById('createUserModal'));
     createModal.show();
 }
@@ -496,7 +438,6 @@ function previewNewUserAvatar(file) {
     if (!file || !file.type.startsWith('image/')) {
         return;
     }
-    
     const reader = new FileReader();
     reader.onload = function(e) {
         $('#new-user-avatar-img').attr('src', e.target.result);
@@ -508,9 +449,6 @@ function previewNewUserAvatar(file) {
 /**
  * Создает нового пользователя
  */
-/**
- * Создает нового пользователя с возможностью загрузки аватарки
- */
 function createNewUser() {
     const formData = new FormData();
     const fullName = $('#new-user-fullname').val().trim();
@@ -519,59 +457,46 @@ function createNewUser() {
     const birthDate = $('#new-user-birthdate').val();
     const role = $('#new-user-role').val();
     const bannedStatus = $('#new-user-banned').prop('checked');
-    
-    // Валидация
     if (!fullName) {
         showNotification('Пожалуйста, введите имя пользователя', 'warning');
         $('#new-user-fullname').focus();
         return;
     }
-    
     if (!email) {
         showNotification('Пожалуйста, введите email', 'warning');
         $('#new-user-email').focus();
         return;
     }
-    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         showNotification('Пожалуйста, введите корректный email адрес', 'warning');
         $('#new-user-email').focus();
         return;
     }
-    
     if (!password) {
         showNotification('Пожалуйста, введите пароль', 'warning');
         $('#new-user-password').focus();
         return;
     }
-    
     if (password.length < 6) {
         showNotification('Пароль должен содержать минимум 6 символов', 'warning');
         $('#new-user-password').focus();
         return;
     }
-    
-    // Добавляем данные в FormData
     formData.append('email', email);
     formData.append('fullName', fullName);
     formData.append('birthDate', birthDate || '');
     formData.append('password', password);
     formData.append('role', role || 'user');
     formData.append('bannedStatus', bannedStatus);
-    
-    // Добавляем аватарку, если она была выбрана
     const avatarInput = document.getElementById('new-user-avatar');
     if (avatarInput && avatarInput.files.length > 0) {
         const avatarFile = avatarInput.files[0];
-        // Проверяем, что это изображение (проверка на стороне сервера тоже будет)
         formData.append('avatar', avatarFile);
     }
-    
     const $saveBtn = $('#save-new-user-btn');
     const originalText = $saveBtn.text();
     $saveBtn.prop('disabled', true).text('Создание...');
-    
     console.log('Отправка запроса на создание пользователя с аватаркой');
     console.log('Данные:', {
         email: email,
@@ -580,36 +505,28 @@ function createNewUser() {
         bannedStatus: bannedStatus,
         hasAvatar: avatarInput && avatarInput.files.length > 0
     });
-    
-    // ИЗМЕНИТЕ URL НА НОВЫЙ ENDPOINT
     $.ajax({
-        url: "/api/users/create-with-avatar",  // ИЗМЕНИЛИ СЮДА
+        url: "/api/users/create-with-avatar",
         method: "POST",
         data: formData,
         processData: false,
         contentType: false,
         success: function(newUser) {
             console.log('Пользователь успешно создан:', newUser);
-            
             allUsers.unshift(newUser);
             currentPage = 1;
-            
             renderUsersTable();
             setupPagination();
             updateAdminPanelHeader();
-            
             const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
             if (modal) {
                 modal.hide();
             }
-            
             showNotification('✅ Пользователь успешно создан!', 'success');
         },
         error: function(xhr) {
             console.error('Ошибка при создании пользователя:', xhr);
-            
             let errorMsg = 'Неизвестная ошибка';
-            
             if (xhr.responseJSON && xhr.responseJSON.error) {
                 errorMsg = xhr.responseJSON.error;
             } else if (xhr.status === 400) {
@@ -625,7 +542,6 @@ function createNewUser() {
             } else if (xhr.status === 500) {
                 errorMsg = 'Внутренняя ошибка сервера';
             }
-            
             showNotification('❌ Ошибка: ' + errorMsg, 'danger');
         },
         complete: function() {
@@ -643,7 +559,6 @@ function saveUserChanges() {
         showNotification('Ошибка: ID пользователя не указан', 'danger');
         return;
     }
-    
     const userData = {
         fullName: $('#edit-fullname').val().trim(),
         email: $('#edit-email').val().trim(),
@@ -651,26 +566,22 @@ function saveUserChanges() {
         role: $('#edit-role').val(),
         bannedStatus: $('#edit-banned').prop('checked')
     };
-    
     if (!userData.fullName) {
         showNotification('Пожалуйста, введите имя пользователя', 'warning');
         $('#edit-fullname').focus();
         return;
     }
-    
     if (!userData.email) {
         showNotification('Пожалуйста, введите email', 'warning');
         $('#edit-email').focus();
         return;
     }
-    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
         showNotification('Пожалуйста, введите корректный email адрес', 'warning');
         $('#edit-email').focus();
         return;
     }
-    
     const password = $('#edit-password').val();
     if (password && password.trim() !== '') {
         if (password.trim().length < 6) {
@@ -680,7 +591,6 @@ function saveUserChanges() {
         }
         userData.password = password.trim();
     }
-    
     sendUpdateRequest(userId, userData);
 }
 
@@ -691,7 +601,6 @@ function sendUpdateRequest(userId, userData) {
     const $saveBtn = $('#save-user-btn');
     const originalText = $saveBtn.text();
     $saveBtn.prop('disabled', true).text('Сохранение...');
-    
     $.ajax({
         url: `/api/users/${userId}/admin-update`,
         method: "PUT",
@@ -702,12 +611,10 @@ function sendUpdateRequest(userId, userData) {
             if (index !== -1) {
                 allUsers[index] = updatedUser;
             }
-            
             const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
             if (modal) {
                 modal.hide();
             }
-            
             renderUsersTable();
             showNotification('✅ Пользователь успешно обновлен!', 'success');
         },
@@ -730,28 +637,23 @@ function sendUpdateRequest(userId, userData) {
  */
 function deleteUser() {
     const userId = $('#edit-user-id').val();
-    
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
     if (currentUser.id == userId) {
         showNotification('Ошибка: Нельзя удалить самого себя', 'danger');
         return;
     }
-    
     if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
         return;
     }
-    
     $.ajax({
         url: `/api/users/${userId}`,
         method: "DELETE",
         success: function(response) {
             allUsers = allUsers.filter(u => u.id != userId);
-            
             const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
             if (modal) {
                 modal.hide();
             }
-            
             renderUsersTable();
             setupPagination();
             updateAdminPanelHeader();

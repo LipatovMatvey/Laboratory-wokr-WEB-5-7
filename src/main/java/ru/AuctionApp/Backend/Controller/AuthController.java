@@ -8,8 +8,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.AuctionApp.Backend.DTO.UserDTO;
 import ru.AuctionApp.Backend.Entity.User;
+import ru.AuctionApp.Backend.Exception.BannedStatusException;
+import ru.AuctionApp.Backend.Exception.InvalidPasswordException;
+import ru.AuctionApp.Backend.Exception.UserAlreadyExistsException;
+import ru.AuctionApp.Backend.Exception.UserNotFoundException;
 import ru.AuctionApp.Backend.Services.AuthService;
-
 import java.util.Map;
 
 /**
@@ -22,15 +25,48 @@ import java.util.Map;
 public class AuthController {
 
     /**
-     * Обработчик всех ошибок RuntimeException,
-     * возвращающий JSON-ответ вида {"error":"сообщение"}.
-     *
-     * @param ex - исключение, возникшее в процессе обработки запроса
-     * @return - карта с текстом ошибки
+     * Обработчик ошибки несуществующего пользователя,
+     * возвращающий JSON-ответ вида {"error":"сообщение"}
+     * @param ex исключение, возникшее в процессе обработки запроса
+     * @return карта с текстом ошибки
      */
-    @ExceptionHandler(RuntimeException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleError(RuntimeException ex) {
+    @ExceptionHandler(UserNotFoundException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, String> handleUserNotFound(UserNotFoundException ex) {
+        return Map.of("error", ex.getMessage());
+    }
+
+    /**
+     * Обработчик ошибки неправильного пароля,
+     * возвращающий JSON-ответ вида {"error":"сообщение"}
+     * @param ex исключение, возникшее в процессе обработки запроса
+     * @return карта с текстом ошибки
+     */
+    @ExceptionHandler(InvalidPasswordException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, String> handleInvalidPassword(InvalidPasswordException ex) {
+        return Map.of("error", ex.getMessage());
+    }
+
+    /** Обработчик ошибки забаненного пользователя,
+     * возвращающий JSON-ответ вида {"error":"сообщение"}
+     * @param ex исключение, возникшее в процессе обработки запроса
+     * @return карта с текстом ошибки
+     */
+    @ExceptionHandler(BannedStatusException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Map<String, String> handleUserBanned(BannedStatusException ex) {
+        return Map.of("error", ex.getMessage());
+    }
+
+    /** Обработчик ошибки уже существующего пользователя,
+     * возвращающий JSON-ответ вида {"error":"сообщение"}
+     * @param ex исключение, возникшее в процессе обработки запроса
+     * @return карта с текстом ошибки
+     */
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Map<String, String> handleUserExists(UserAlreadyExistsException ex) {
         return Map.of("error", ex.getMessage());
     }
 
@@ -39,7 +75,7 @@ public class AuthController {
 
     /**
      * Регистрирует нового пользователя.
-     * После успешной регистрации создаёт сессию и возвращает данные пользователя.
+     * После успешной регистрации создаёт сессию и возвращает данные пользователя
      * @param email - Электронная почта
      * @param fullName - ФИО
      * @param birthDate - дата рождения
@@ -63,8 +99,7 @@ public class AuthController {
     }
 
     /**
-     * Авторизует пользователя по email и паролю.
-     *
+     * Авторизует пользователя по email и паролю
      * @param loginData - объект User, содержащий email и password
      * @param session - текущая HTTP-сессия
      * @return - данные авторизованного пользователя
@@ -72,19 +107,15 @@ public class AuthController {
     @PostMapping("/login")
     public UserDTO login(@RequestBody User loginData, HttpSession session) {
         UserDTO dto = authService.login(loginData.getEmail(), loginData.getPassword());
-
-        // если вошёл успешно — сохраняем userId в сессию
         session.setAttribute("userId", dto.getId());
-
         return dto;
     }
 
     /**
-     * Возвращает данные текущего пользователя по его сессии.
-     * Если пользователь не авторизован — возвращается DTO с authenticated=false.
-     *
-     * @param session - текущая HTTP-сессия
-     * @return - данные текущего пользователя
+     * Возвращает данные текущего пользователя по его сессии
+     * Если пользователь не авторизован — возвращается DTO с authenticated=false
+     * @param session текущая HTTP-сессия
+     * @return данные текущего пользователя
      */
     @GetMapping("/whoAmI")
     public UserDTO whoAmI(HttpSession session) {
@@ -93,8 +124,7 @@ public class AuthController {
 
     /**
      * Завершает пользовательскую сессию, удаляя все данные авторизации
-     *
-     * @param session - текущая HTTP-сессия
+     * @param session текущая HTTP-сессия
      */
     @PostMapping("/logout")
     public void logout(HttpSession session) {

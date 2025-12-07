@@ -24,8 +24,6 @@ public class UserController {
 
     /**
      * Получает список всех пользователей (доступно только администраторам)
-     * Возвращает полные данные, включая пароли
-     *
      * @param session HTTP сессия для проверки авторизации
      * @return ResponseEntity со списком пользователей или сообщением об ошибке
      */
@@ -37,23 +35,18 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             User currentUser = usersRepository.findById(userId).orElse(null);
             if (currentUser == null || !"admin".equals(currentUser.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут просматривать всех пользователей"));
             }
-
             List<User> users = usersRepository.findAllByOrderById();
             List<Map<String, Object>> usersWithPasswords = new ArrayList<>();
-
             for (User user : users) {
                 Map<String, Object> userData = convertUserToMap(user);
                 usersWithPasswords.add(userData);
             }
-
             return ResponseEntity.ok(usersWithPasswords);
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -63,7 +56,6 @@ public class UserController {
 
     /**
      * Получает данные конкретного пользователя по ID
-     *
      * @param id ID пользователя
      * @return ResponseEntity с данными пользователя или сообщением об ошибке
      */
@@ -75,9 +67,7 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Пользователь не найден"));
             }
-
             return ResponseEntity.ok(convertUserToMap(user));
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -87,8 +77,6 @@ public class UserController {
 
     /**
      * Обновляет данные пользователя (для обычных пользователей)
-     * Разрешает обновление только ограниченного набора полей
-     *
      * @param id ID пользователя
      * @param updates Map с обновляемыми данными
      * @param session HTTP сессия для проверки авторизации
@@ -106,17 +94,14 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Нет доступа к обновлению данных этого пользователя"));
             }
-
             User user = usersRepository.findById(id).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Пользователь не найден"));
             }
-
             if (updates.containsKey("fullName")) {
                 user.setFullName((String) updates.get("fullName"));
             }
-
             if (updates.containsKey("email")) {
                 String newEmail = (String) updates.get("email");
                 User existingUser = usersRepository.findByEmail(newEmail);
@@ -126,15 +111,11 @@ public class UserController {
                 }
                 user.setEmail(newEmail);
             }
-
             if (updates.containsKey("birthDate")) {
                 user.setBirthDate((String) updates.get("birthDate"));
             }
-
             usersRepository.save(user);
-
             return ResponseEntity.ok(convertUserToMap(user));
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -144,7 +125,6 @@ public class UserController {
 
     /**
      * Загружает или обновляет аватар пользователя
-     *
      * @param id ID пользователя
      * @param avatar файл изображения для загрузки
      * @param session HTTP сессия для проверки авторизации
@@ -162,46 +142,37 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Нет доступа"));
             }
-
             User user = usersRepository.findById(id).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Пользователь не найден"));
             }
-
             if (avatar == null || avatar.isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "Файл не был загружен"));
             }
-
             if (!avatar.getContentType().startsWith("image/")) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "Загружаемый файл должен быть изображением"));
             }
-
             String originalFilename = avatar.getOriginalFilename();
             String fileExtension = "";
             if (originalFilename != null && originalFilename.contains(".")) {
                 fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
             String fileName = UUID.randomUUID().toString() + fileExtension;
-
             Path uploadPath = Paths.get("uploads/avatars");
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
-
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(avatar.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
             user.setAvatarPath("/uploads/avatars/" + fileName);
             usersRepository.save(user);
-
             return ResponseEntity.ok(Map.of(
                     "avatarUrl", user.getAvatarPath(),
                     "message", "Аватар успешно обновлен"
             ));
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -211,8 +182,6 @@ public class UserController {
 
     /**
      * Обновляет данные пользователя с правами администратора
-     * Позволяет изменять все поля, включая пароль и роль
-     *
      * @param id ID пользователя для обновления
      * @param updates Map с обновляемыми данными
      * @param session HTTP сессия для проверки прав администратора
@@ -230,26 +199,22 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             User admin = usersRepository.findById(adminId).orElse(null);
             if (admin == null || !"admin".equals(admin.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут обновлять пользователей"));
             }
-
             User user = usersRepository.findById(id).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Пользователь не найден"));
             }
-
             if (updates.containsKey("fullName")) {
                 String fullName = (String) updates.get("fullName");
                 if (fullName != null && !fullName.trim().isEmpty()) {
                     user.setFullName(fullName.trim());
                 }
             }
-
             if (updates.containsKey("email")) {
                 String newEmail = (String) updates.get("email");
                 if (newEmail != null && !newEmail.trim().isEmpty()) {
@@ -257,7 +222,6 @@ public class UserController {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .body(Map.of("error", "Некорректный формат email"));
                     }
-
                     User existingUser = usersRepository.findByEmail(newEmail);
                     if (existingUser != null && !existingUser.getId().equals(id)) {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -266,26 +230,22 @@ public class UserController {
                     user.setEmail(newEmail.trim());
                 }
             }
-
             if (updates.containsKey("password")) {
                 String password = (String) updates.get("password");
                 if (password != null && !password.trim().isEmpty()) {
                     user.setPassword(password.trim());
                 }
             }
-
             if (updates.containsKey("birthDate")) {
                 String birthDate = (String) updates.get("birthDate");
                 user.setBirthDate(birthDate != null ? birthDate.trim() : null);
             }
-
             if (updates.containsKey("role")) {
                 String newRole = (String) updates.get("role");
                 if (newRole != null && !newRole.trim().isEmpty()) {
                     user.setRole(newRole);
                 }
             }
-
             if (updates.containsKey("bannedStatus")) {
                 Object bannedStatusObj = updates.get("bannedStatus");
                 boolean banned = false;
@@ -296,7 +256,6 @@ public class UserController {
                 }
                 user.setBannedStatus(banned);
             }
-
             if (updates.containsKey("visits")) {
                 Object visitsObj = updates.get("visits");
                 int visits = 0;
@@ -310,12 +269,9 @@ public class UserController {
                 }
                 user.setVisits(visits);
             }
-
             usersRepository.save(user);
             Map<String, Object> updatedUser = convertUserToMap(user);
-
             return ResponseEntity.ok(updatedUser);
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -325,7 +281,6 @@ public class UserController {
 
     /**
      * Блокирует или разблокирует пользователя
-     *
      * @param id ID пользователя для блокировки/разблокировки
      * @param request Map с ключом "banned" (true/false)
      * @param session HTTP сессия для проверки прав администратора
@@ -343,38 +298,30 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             User admin = usersRepository.findById(adminId).orElse(null);
             if (admin == null || !"admin".equals(admin.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут блокировать пользователей"));
             }
-
             User user = usersRepository.findById(id).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Пользователь не найден"));
             }
-
             if (user.getId().equals(adminId)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Нельзя заблокировать самого себя"));
             }
-
             Boolean banned = request.get("banned");
             if (banned != null) {
                 user.setBannedStatus(banned);
                 usersRepository.save(user);
-
                 Map<String, Object> response = convertUserToMap(user);
                 response.put("message", banned ? "Пользователь заблокирован" : "Пользователь разблокирован");
-
                 return ResponseEntity.ok(response);
             }
-
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Не указан статус блокировки"));
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -384,7 +331,6 @@ public class UserController {
 
     /**
      * Удаляет пользователя (только для администраторов)
-     *
      * @param id ID пользователя для удаления
      * @param session HTTP сессия для проверки прав администратора
      * @return ResponseEntity с сообщением об успешном удалении или ошибке
@@ -400,28 +346,22 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             User admin = usersRepository.findById(adminId).orElse(null);
             if (admin == null || !"admin".equals(admin.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут удалять пользователей"));
             }
-
             if (id.equals(adminId)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Нельзя удалить самого себя"));
             }
-
             User user = usersRepository.findById(id).orElse(null);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Пользователь не найден"));
             }
-
             usersRepository.delete(user);
-
             return ResponseEntity.ok(Map.of("message", "Пользователь успешно удален"));
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -431,7 +371,6 @@ public class UserController {
 
     /**
      * Получает список ставок пользователя (заглушка)
-     *
      * @param id ID пользователя
      * @return ResponseEntity с пустым списком (требует реализации)
      */
@@ -442,7 +381,6 @@ public class UserController {
 
     /**
      * Получает список выигранных лотов пользователя (заглушка)
-     *
      * @param id ID пользователя
      * @return ResponseEntity с пустым списком (требует реализации)
      */
@@ -467,12 +405,12 @@ public class UserController {
         userData.put("avatarPath", user.getAvatarPath());
         userData.put("bannedStatus", user.isBannedStatus());
         userData.put("password", user.getPassword());
+        userData.put("balance", user.getBalance());
         return userData;
     }
 
     /**
      * Создает нового пользователя (доступно только администраторам)
-     *
      * @param userData Map с данными нового пользователя
      * @param session HTTP сессия для проверки прав администратора
      * @return ResponseEntity с созданным пользователем или сообщением об ошибке
@@ -488,61 +426,47 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             User admin = usersRepository.findById(adminId).orElse(null);
             if (admin == null || !"admin".equals(admin.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут создавать пользователей"));
             }
-
-            // Валидация обязательных полей
             if (!userData.containsKey("fullName") || !userData.containsKey("email") || !userData.containsKey("password")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Необходимо указать имя, email и пароль"));
             }
-
             String fullName = (String) userData.get("fullName");
             String email = (String) userData.get("email");
             String password = (String) userData.get("password");
             String birthDate = (String) userData.get("birthDate");
             String role = (String) userData.get("role");
-
             if (role == null) {
-                role = "user"; // По умолчанию создаем обычного пользователя
+                role = "user";
             }
-
             if (fullName == null || fullName.trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Имя пользователя не может быть пустым"));
             }
-
             if (email == null || email.trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Email не может быть пустым"));
             }
-
             if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Некорректный формат email"));
             }
-
             if (password == null || password.trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Пароль не может быть пустым"));
             }
-
             if (password.trim().length() < 6) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Пароль должен содержать минимум 6 символов"));
             }
-
-            // Проверка на существование email
             if (usersRepository.existsByEmail(email)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(Map.of("error", "Пользователь с таким email уже существует"));
             }
-
-            // Создаем нового пользователя
             User newUser = new User();
             newUser.setFullName(fullName.trim());
             newUser.setEmail(email.trim());
@@ -551,9 +475,7 @@ public class UserController {
             newUser.setRole(role);
             newUser.setVisits(0);
             newUser.setBannedStatus(false);
-            newUser.setAvatarPath("/uploads/avatars/img.png"); // Дефолтная аватарка
-
-            // Обработка статуса блокировки, если указан
+            newUser.setAvatarPath("/uploads/avatars/img.png");
             if (userData.containsKey("bannedStatus")) {
                 Object bannedStatusObj = userData.get("bannedStatus");
                 boolean banned = false;
@@ -564,12 +486,9 @@ public class UserController {
                 }
                 newUser.setBannedStatus(banned);
             }
-
             usersRepository.save(newUser);
-
             Map<String, Object> response = convertUserToMap(newUser);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -580,7 +499,6 @@ public class UserController {
 
     /**
      * Создает нового пользователя с возможностью загрузки аватарки
-     *
      * @param email Email пользователя
      * @param fullName Полное имя пользователя
      * @param birthDate Дата рождения (необязательно)
@@ -608,46 +526,35 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             User admin = usersRepository.findById(adminId).orElse(null);
             if (admin == null || !"admin".equals(admin.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут создавать пользователей"));
             }
-
-            // Валидация обязательных полей
             if (fullName == null || fullName.trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Имя пользователя не может быть пустым"));
             }
-
             if (email == null || email.trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Email не может быть пустым"));
             }
-
             if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Некорректный формат email"));
             }
-
             if (password == null || password.trim().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Пароль не может быть пустым"));
             }
-
             if (password.trim().length() < 6) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Пароль должен содержать минимум 6 символов"));
             }
-
-            // Проверка на существование email
             if (usersRepository.existsByEmail(email)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(Map.of("error", "Пользователь с таким email уже существует"));
             }
-
-            // Создаем нового пользователя
             User newUser = new User();
             newUser.setFullName(fullName.trim());
             newUser.setEmail(email.trim());
@@ -656,15 +563,10 @@ public class UserController {
             newUser.setRole(role);
             newUser.setVisits(0);
             newUser.setBannedStatus(bannedStatus);
-
-            // Устанавливаем дефолтную аватарку
             newUser.setAvatarPath("/uploads/avatars/img.png");
-
-            // Обработка загрузки аватарки (если файл предоставлен и не пустой)
             if (avatar != null && !avatar.isEmpty() && avatar.getOriginalFilename() != null &&
                     !avatar.getOriginalFilename().isEmpty()) {
                 try {
-                    // Проверяем, что это изображение
                     if (avatar.getContentType() != null && avatar.getContentType().startsWith("image/")) {
                         String originalFilename = avatar.getOriginalFilename();
                         String fileExtension = "";
@@ -672,32 +574,24 @@ public class UserController {
                             fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
                         }
                         String fileName = UUID.randomUUID().toString() + fileExtension;
-
                         Path uploadPath = Paths.get("uploads/avatars");
                         if (!Files.exists(uploadPath)) {
                             Files.createDirectories(uploadPath);
                         }
-
                         Path filePath = uploadPath.resolve(fileName);
                         Files.copy(avatar.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
                         newUser.setAvatarPath("/uploads/avatars/" + fileName);
                     } else {
-                        // Если загруженный файл не является изображением, используем дефолтную аватарку
                         newUser.setAvatarPath("/uploads/avatars/img.png");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    // При ошибке загрузки используем дефолтную аватарку
                     newUser.setAvatarPath("/uploads/avatars/img.png");
                 }
             }
-
             usersRepository.save(newUser);
-
             Map<String, Object> response = convertUserToMap(newUser);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

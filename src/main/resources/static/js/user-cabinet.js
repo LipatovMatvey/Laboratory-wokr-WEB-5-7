@@ -1,8 +1,9 @@
-/**
- * Основная функция инициализации личного кабинета.
- * Настраивает обработчики событий и загружает данные пользователя.
- */
 $(document).ready(function() {
+    console.log('=== user-cabinet.js загружен ===');
+    
+    let pendingAvatarFile = null; // Файл аватара, ожидающий сохранения
+    let originalAvatarUrl = null; // Исходный URL аватара
+    
     checkAuth();
     
     $('#logout-btn').on('click', function() {
@@ -10,21 +11,196 @@ $(document).ready(function() {
     });
     
     loadUserData();
+    loadUserBalance();
     
     $('#user-data-form').on('submit', function(e) {
         e.preventDefault();
         updateUserData();
     });
     
+    // Изменено: только предпросмотр, без автоматической загрузки
     $('#avatar-upload').on('change', function(e) {
         if (e.target.files && e.target.files[0]) {
-            uploadAvatar(e.target.files[0]);
+            const file = e.target.files[0];
+            previewAvatar(file);
         }
+    });
+    
+    // Добавлено: обработчик кнопки удаления фото
+    $(document).on('click', '#remove-avatar-btn', function() {
+        removeAvatarPreview();
+    });
+    
+    // Обработчик кнопки пополнения баланса - добавим отладку
+    $(document).on('click', '#add-balance-btn', function(e) {
+        e.preventDefault();
+        console.log('=== Кнопка "Пополнить баланс" нажата ===');
+        console.log('Кнопка:', this);
+        console.log('Событие:', e);
+        addFixedBalance();
     });
     
     loadUserBids();
     loadWonLots();
 });
+
+/**
+ * Запрашивает у сервера текущее московское время
+ * и отображает его в элементе #server-time.
+ * @returns {undefined}
+ */
+function updateServerTime() {
+    $.ajax({
+        url: "/api/time",
+        method: "GET",
+        success: function (data) {
+            $("#server-time").text("Точное московское время: " + data.time);
+        }
+    });
+}
+
+setInterval(updateServerTime, 1000);
+updateServerTime();
+
+
+/**
+ * Загружает текущий баланс пользователя с сервера.
+ */
+function loadUserBalance() {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+        console.log('Пользователь не найден в localStorage');
+        return;
+    }
+    
+    console.log('Загрузка баланса...');
+    $.ajax({
+        url: "/api/balance",
+        method: "GET",
+        success: function(response) {
+            console.log('Баланс загружен:', response.balance);
+            updateBalanceDisplay(response.balance);
+            
+            // Обновляем баланс в localStorage
+            const user = JSON.parse(userStr);
+            user.balance = response.balance;
+            localStorage.setItem('user', JSON.stringify(user));
+        },
+        error: function(xhr) {
+            console.error('Ошибка при загрузке баланса:', xhr.responseJSON);
+            // Пробуем получить баланс из localStorage
+            const user = JSON.parse(userStr);
+            if (user.balance !== undefined) {
+                updateBalanceDisplay(user.balance);
+            } else {
+                $('#user-balance').text('Ошибка загрузки');
+            }
+        }
+    });
+}
+
+/**
+ * Обновляет отображение баланса на странице.
+ * @param {number} balance - Сумма баланса
+ */
+function updateBalanceDisplay(balance) {
+    const formattedBalance = balance.toLocaleString('ru-RU', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    $('#user-balance').text(formattedBalance);
+}
+
+/**
+ * Пополняет баланс на фиксированную сумму (10,000 рублей).
+ */
+function addFixedBalance() {
+    console.log('=== addFixedBalance вызвана ===');
+    
+    // Проверяем jQuery
+    if (typeof $ === 'undefined') {
+        console.error('jQuery не загружен!');
+        return;
+    }
+    
+    const $button = $('#add-balance-btn');
+    if ($button.length === 0) {
+        console.error('Кнопка #add-balance-btn не найдена!');
+        return;
+    }
+    
+    console.log('Кнопка найдена, текст:', $button.text());
+    
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+        console.error('Пользователь не найден в localStorage');
+        alert('Ошибка: пользователь не авторизован');
+        return;
+    }
+    
+    const user = JSON.parse(userStr);
+    console.log('Данные пользователя:', user);
+    
+    if (!user.authenticated) {
+        alert('Ошибка: пользователь не авторизован');
+        return;
+    }
+    
+    if (!confirm('Вы уверены, что хотите пополнить баланс на 10,000 ₽?')) {
+        return;
+    }
+    
+    const originalText = $button.html();
+    $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Пополнение...');
+    
+    console.log('Отправка POST запроса на /api/balance/add-fixed');
+    
+    // Отправляем AJAX запрос
+    $.ajax({
+        url: "/api/balance/add-fixed",
+        method: "POST",
+        dataType: "json",
+        success: function(response) {
+            console.log('Успешный ответ сервера:', response);
+            
+            if (response && response.newBalance !== undefined) {
+                updateBalanceDisplay(response.newBalance);
+                
+                // Обновляем localStorage
+                user.balance = response.newBalance;
+                localStorage.setItem('user', JSON.stringify(user));
+                
+                alert(`✅ Баланс успешно пополнен!\nНовый баланс: ${response.newBalance.toLocaleString('ru-RU')} ₽`);
+            } else {
+                alert('Ошибка: некорректный ответ от сервера');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка AJAX:', {
+                status: status,
+                error: error,
+                response: xhr.responseText,
+                readyState: xhr.readyState,
+                statusText: xhr.statusText
+            });
+            
+            let errorMessage = 'Не удалось пополнить баланс';
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response && response.error) {
+                    errorMessage = response.error;
+                }
+            } catch (e) {
+                errorMessage = xhr.statusText || 'Сервер недоступен';
+            }
+            
+            alert(`❌ ${errorMessage}`);
+        },
+        complete: function() {
+            $button.prop('disabled', false).html(originalText);
+        }
+    });
+}
 
 /**
  * Показывает уведомление пользователю в правом верхнем углу.
@@ -170,11 +346,22 @@ function loadUserData() {
     $('#user-birthdate').val(user.birthdate || '');
     $('#display-role').text(getRoleDisplayName(user.role) || 'Пользователь');
     
-    if (user.avatarUrl && user.avatarUrl !== 'null') {
-        $('#user-avatar').attr('src', user.avatarUrl);
-    } else {
-        // Используем дефолтную аватарку вместо placeholder
-        $('#user-avatar').attr('src', '/uploads/avatars/img.png');
+    // Сохраняем исходный URL аватара
+    originalAvatarUrl = user.avatarUrl || '/uploads/avatars/img.png';
+    
+    // Отображаем текущий аватар в предпросмотре
+    $('#user-avatar-preview').attr('src', originalAvatarUrl);
+    
+    // Сбрасываем ожидающий файл
+    pendingAvatarFile = null;
+    $('#avatar-file-info').hide();
+    $('#remove-avatar-btn').hide();
+    
+    // Очищаем input файла
+    $('#avatar-upload').val('');
+    
+    if (user.balance !== undefined) {
+        updateBalanceDisplay(user.balance);
     }
     
     $.ajax({
@@ -185,15 +372,19 @@ function loadUserData() {
             $('#user-email').val(userData.email || '');
             $('#user-birthdate').val(userData.birthDate || '');
             
-            if (userData.avatarPath) {
-                $('#user-avatar').attr('src', userData.avatarPath);
-                user.avatarUrl = userData.avatarPath;
-                localStorage.setItem('user', JSON.stringify(user));
+            // Обновляем баланс
+            if (userData.balance !== undefined) {
+                updateBalanceDisplay(userData.balance);
+                user.balance = userData.balance; // Обновляем в объекте пользователя
+                localStorage.setItem('user', JSON.stringify(user)); // Сохраняем в localStorage
             }
-            else{
-                $('#user-avatar').attr('src', '/uploads/avatars/img.png');
-                user.avatarUrl = '/uploads/avatars/img.png';
-                localStorage.setItem('user', JSON.stringify(user));
+            
+            if (userData.avatarPath) {
+                $('#user-avatar-preview').attr('src', userData.avatarPath);
+                originalAvatarUrl = userData.avatarPath;
+            } else {
+                $('#user-avatar-preview').attr('src', '/uploads/avatars/img.png');
+                originalAvatarUrl = '/uploads/avatars/img.png';
             }
             
             user.fullName = userData.fullName;
@@ -210,6 +401,68 @@ function loadUserData() {
 }
 
 /**
+ * Предпросмотр аватара без сохранения на сервер.
+ * @param {File} file - Файл изображения для предпросмотра
+ */
+function previewAvatar(file) {
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+        showUserNotification('Пожалуйста, выберите файл изображения (JPG, PNG, GIF)', 'warning');
+        $('#avatar-upload').val('');
+        return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+        showUserNotification('Размер файла не должен превышать 5MB', 'warning');
+        $('#avatar-upload').val('');
+        return;
+    }
+    
+    // Сохраняем файл для последующей загрузки при сохранении
+    pendingAvatarFile = file;
+    
+    // Показываем информацию о файле
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+    $('#avatar-file-info').html(`
+        Выбран файл: ${file.name}<br>
+        Размер: ${fileSizeMB} MB
+    `).show();
+    
+    // Показываем предпросмотр
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        $('#user-avatar-preview').attr('src', e.target.result);
+    };
+    reader.readAsDataURL(file);
+    
+    // Показываем кнопку удаления
+    $('#remove-avatar-btn').show();
+    
+    showUserNotification('Фото загружено для предпросмотра. Нажмите "Сохранить изменения" для применения.', 'info');
+}
+
+/**
+ * Удаляет предпросмотр аватара и сбрасывает состояние.
+ */
+function removeAvatarPreview() {
+    // Возвращаем исходный аватар
+    $('#user-avatar-preview').attr('src', originalAvatarUrl);
+    
+    // Сбрасываем ожидающий файл
+    pendingAvatarFile = null;
+    
+    // Очищаем input файла
+    $('#avatar-upload').val('');
+    
+    // Скрываем информацию о файле и кнопку удаления
+    $('#avatar-file-info').hide();
+    $('#remove-avatar-btn').hide();
+    
+    showUserNotification('Изменения фото отменены. Нажмите "Сохранить изменения" для применения.', 'info');
+}
+
+/**
  * Обновляет данные пользователя на сервере.
  * Валидирует форму, отправляет данные и обрабатывает ответ.
  */
@@ -223,6 +476,7 @@ function updateUserData() {
     
     const user = JSON.parse(userStr);
     
+    // Проверяем валидность данных формы
     const userData = {
         fullName: $('#user-name').val().trim(),
         email: $('#user-email').val().trim(),
@@ -255,20 +509,84 @@ function updateUserData() {
     
     $('.user-notification').remove();
     
+    // Если есть файл аватара, загружаем его вместе с данными
+    if (pendingAvatarFile) {
+        uploadAvatarWithUserData(user, userData, $submitBtn, originalText);
+    } else {
+        // Если файла нет, просто обновляем данные пользователя
+        updateUserDataOnly(user, userData, $submitBtn, originalText);
+    }
+}
+
+/**
+ * Загружает аватар вместе с обновлением данных пользователя.
+ * @param {object} user - Объект пользователя из localStorage
+ * @param {object} userData - Данные для обновления
+ * @param {jQuery} $submitBtn - Кнопка отправки
+ * @param {string} originalText - Оригинальный текст кнопки
+ */
+function uploadAvatarWithUserData(user, userData, $submitBtn, originalText) {
+    const formData = new FormData();
+    formData.append('avatar', pendingAvatarFile);
+    
+    // Отправляем аватар
+    $.ajax({
+        url: `/api/users/${user.id}/avatar`,
+        method: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(avatarResponse) {
+            // После успешной загрузки аватара обновляем данные пользователя
+            userData.avatarPath = avatarResponse.avatarUrl;
+            updateUserDataOnly(user, userData, $submitBtn, originalText, true);
+        },
+        error: function(xhr) {
+            $submitBtn.prop('disabled', false).text(originalText);
+            const response = xhr.responseJSON;
+            showUserNotification('❌ Ошибка при загрузке фото: ' + (response?.error || 'Не удалось загрузить аватар'), 'danger');
+        }
+    });
+}
+
+/**
+ * Обновляет только данные пользователя (без аватара).
+ * @param {object} user - Объект пользователя из localStorage
+ * @param {object} userData - Данные для обновления
+ * @param {jQuery} $submitBtn - Кнопка отправки
+ * @param {string} originalText - Оригинальный текст кнопки
+ * @param {boolean} avatarUpdated - Флаг обновления аватара
+ */
+function updateUserDataOnly(user, userData, $submitBtn, originalText, avatarUpdated = false) {
     $.ajax({
         url: `/api/users/${user.id}`,
         method: "PUT",
         contentType: "application/json",
         data: JSON.stringify(userData),
         success: function(updatedUser) {
+            // Обновляем данные в localStorage
             user.fullName = updatedUser.fullName;
             user.email = updatedUser.email;
             user.birthdate = updatedUser.birthDate;
+            
+            if (avatarUpdated && updatedUser.avatarPath) {
+                user.avatarUrl = updatedUser.avatarPath;
+                originalAvatarUrl = updatedUser.avatarPath;
+            }
+            
             localStorage.setItem('user', JSON.stringify(user));
             
+            // Обновляем отображение
             $('#user-info').text(updatedUser.fullName);
+            $('#user-avatar-preview').attr('src', user.avatarUrl || '/uploads/avatars/img.png');
             
-            showUserNotification('✅ Данные успешно обновлены!', 'success');
+            // Сбрасываем состояние аватара
+            pendingAvatarFile = null;
+            $('#avatar-file-info').hide();
+            $('#remove-avatar-btn').hide();
+            $('#avatar-upload').val('');
+            
+            showUserNotification('✅ Данные успешно обновлены!' + (avatarUpdated ? ' Фото сохранено.' : ''), 'success');
         },
         error: function(xhr) {
             const response = xhr.responseJSON;
@@ -276,61 +594,6 @@ function updateUserData() {
         },
         complete: function() {
             $submitBtn.prop('disabled', false).text(originalText);
-        }
-    });
-}
-
-/**
- * Загружает и обновляет аватар пользователя.
- * @param {File} file - Файл изображения для загрузки
- */
-function uploadAvatar(file) {
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-        showUserNotification('Пожалуйста, выберите файл изображения (JPG, PNG, GIF)', 'warning');
-        return;
-    }
-    
-    if (file.size > 5 * 1024 * 1024) {
-        showUserNotification('Размер файла не должен превышать 5MB', 'warning');
-        return;
-    }
-    
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-        showUserNotification('Ошибка: пользователь не авторизован', 'danger');
-        return;
-    }
-    
-    const user = JSON.parse(userStr);
-    
-    const formData = new FormData();
-    formData.append('avatar', file);
-    
-    const $avatar = $('#user-avatar');
-    const originalSrc = $avatar.attr('src');
-    $avatar.css('opacity', '0.5');
-    
-    $.ajax({
-        url: `/api/users/${user.id}/avatar`,
-        method: "POST",
-        data: formData,
-        processData: false,
-        contentType: false,
-        success: function(response) {
-            $avatar.attr('src', response.avatarUrl).css('opacity', '1');
-            
-            user.avatarUrl = response.avatarUrl;
-            localStorage.setItem('user', JSON.stringify(user));
-            
-            showUserNotification('✅ Аватар успешно обновлен!', 'success');
-        },
-        error: function(xhr) {
-            $avatar.attr('src', originalSrc).css('opacity', '1');
-            
-            const response = xhr.responseJSON;
-            showUserNotification('❌ Ошибка: ' + (response?.error || 'Не удалось загрузить аватар'), 'danger');
         }
     });
 }

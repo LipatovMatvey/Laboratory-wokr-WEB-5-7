@@ -25,4 +25,6 @@ public class User {
     private boolean bannedStatus;
     private String role;
     private String avatarPath;
+    @Column(nullable = false)
+    private double balance = 0.0;
 }

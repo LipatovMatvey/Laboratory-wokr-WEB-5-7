@@ -1,119 +1,123 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аукцион - Авторизация</title>
-    <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
-    <script src="../library/jquery-3.7.1.min.js" defer></script>
-    <script src="../js/auth.js" defer></script>
-    <link href="../style/auth.css" rel="stylesheet" type="text/css"/>
-    
-</head>
-<body>
-<div class="auth-container">
-    <!-- Левая часть - красивый баннер -->
-    <div class="auth-hero">
-        <div class="hero-content">
-            <h1>Добро пожаловать на Аукцион</h1>
-            <p>Присоединяйтесь к сообществу коллекционеров и найдите уникальные лоты</p>
-            <div class="hero-features">
-                <div class="feature">
-                    <i class="feature-icon">⚡</i>
-                    <span>Мгновенные ставки</span>
+    <head>
+        <title>Аукцион - Авторизация</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+        <script src="../library/jquery-3.7.1.min.js" defer></script>
+        <script src="../js/auth.js" defer></script>
+        <link href="../style/auth.css" rel="stylesheet" type="text/css"/>
+
+    </head>
+    <body>
+        <div class="auth-container">
+            <div class="auth-hero">
+                <div class="hero-content">
+                    <h1>Добро пожаловать на Аукцион</h1>
+                    <p>Присоединяйтесь к сообществу коллекционеров и найдите уникальные лоты</p>
+                    <div class="hero-features">
+                        <div class="feature">
+                            <i class="feature-icon">⚡</i>
+                            <span>Мгновенные ставки</span>
+                        </div>
+                        <div class="feature">
+                            <i class="feature-icon">🛡️</i>
+                            <span>Безопасные сделки</span>
+                        </div>
+                        <div class="feature">
+                            <i class="feature-icon">🎯</i>
+                            <span>Уникальные лоты</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="feature">
-                    <i class="feature-icon">🛡️</i>
-                    <span>Безопасные сделки</span>
-                </div>
-                <div class="feature">
-                    <i class="feature-icon">🎯</i>
-                    <span>Уникальные лоты</span>
+            </div>
+
+
+            <div class="auth-forms">
+                <div class="forms-wrapper">
+
+                    <div class="auth-tabs">
+                        <button class="auth-tab active" data-tab="login">Вход</button>
+                        <button class="auth-tab" data-tab="register">Регистрация</button>
+                    </div>
+
+                    <form id="login-form" class="auth-form active">
+                        <h2>Вход в аккаунт</h2>
+
+                        <div class="form-group">
+                            <label for="login-email" class="form-label">Email</label>
+                            <input type="email" id="login-email" class="form-control" placeholder="your@email.com" required>
+                            <span id="login-email-error" class="error"></span>
+                        </div>
+
+                        <div class="form-group password-group">
+                            <label for="login-password" class="form-label">Пароль</label>
+                            <div class="input-group">
+                                <input type="password" id="login-password" class="form-control" placeholder="Введите пароль" required>
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="login-password">
+                                    👁️
+                                </button>
+                            </div>
+                            <span id="login-password-error" class="error"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Войти</button>
+                    </form>
+
+                    <form id="register-form" class="auth-form">
+                        <h2>Создать аккаунт</h2>
+
+                        <div class="form-group">
+                            <label for="register-name" class="form-label">Имя и фамилия</label>
+                            <input type="text" id="register-name" class="form-control" placeholder="Иван Иванов" required>
+                            <span id="error-name" class="error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="birth-date" class="form-label">Дата рождения</label>
+                            <input type="date" id="birth-date" class="form-control" required>
+                            <span id="error-birth-date" class="error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="register-email" class="form-label">Email</label>
+                            <input type="email" id="register-email" class="form-control" placeholder="your@email.com" required>
+                            <span id="error-email" class="error"></span>
+                        </div>
+
+                        <div class="form-group password-group">
+                            <label for="register-password" class="form-label">Пароль</label>
+                            <div class="input-group">
+                                <input type="password" id="register-password" class="form-control" placeholder="Не менее 6 символов" required>
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="register-password">
+                                    👁️
+                                </button>
+                            </div>
+                            <span id="error-password" class="error"></span>
+                        </div>
+
+                        <div class="form-group password-group">
+                            <label for="register-confirm-password" class="form-label">Подтвердите пароль</label>
+                            <div class="input-group">
+                                <input type="password" id="register-confirm-password" class="form-control" placeholder="Повторите пароль" required>
+                                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="register-confirm-password">
+                                    👁️
+                                </button>
+                            </div>
+                            <span id="error-repeat-password" class="error"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Создать аккаунт</button>
+                    </form>
+
+                    <div class="auth-footer">
+                        <a href="../index.html" class="back-link">
+                            ← Вернуться на главную
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Правая часть - формы -->
-    <div class="auth-forms">
-        <div class="forms-wrapper">
-            <!-- Переключатель между логином и регистрацией -->
-            <div class="auth-tabs">
-                <button class="auth-tab active" data-tab="login">Вход</button>
-                <button class="auth-tab" data-tab="register">Регистрация</button>
-            </div>
-
-            <!-- Форма входа -->
-            <form id="login-form" class="auth-form active">
-                <h2>Вход в аккаунт</h2>
-
-                <div class="form-group">
-                    <label for="login-email" class="form-label">Email</label>
-                    <input type="email" id="login-email" class="form-control" placeholder="your@email.com" required>
-                </div>
-
-                <div class="form-group password-group">
-                    <label for="login-password" class="form-label">Пароль</label>
-                    <div class="input-group">
-                        <input type="password" id="login-password" class="form-control" placeholder="Введите пароль" required>
-                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="login-password">
-                            👁️
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100">Войти</button>
-            </form>
-
-            <!-- Форма регистрации -->
-            <form id="register-form" class="auth-form">
-                <h2>Создать аккаунт</h2>
-
-                <div class="form-group">
-                    <label for="register-name" class="form-label">Имя и фамилия</label>
-                    <input type="text" id="register-name" class="form-control" placeholder="Иван Иванов" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="birth-date" class="form-label">Дата рождения</label>
-                    <input type="date" id="birth-date" class="form-control" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="register-email" class="form-label">Email</label>
-                    <input type="email" id="register-email" class="form-control" placeholder="your@email.com" required>
-                </div>
-
-                <div class="form-group password-group">
-                    <label for="register-password" class="form-label">Пароль</label>
-                    <div class="input-group">
-                        <input type="password" id="register-password" class="form-control" placeholder="Не менее 6 символов" required>
-                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="register-password">
-                            👁️
-                        </button>
-                    </div>
-                </div>
-
-                <div class="form-group password-group">
-                    <label for="register-confirm-password" class="form-label">Подтвердите пароль</label>
-                    <div class="input-group">
-                        <input type="password" id="register-confirm-password" class="form-control" placeholder="Повторите пароль" required>
-                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="register-confirm-password">
-                            👁️
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100">Создать аккаунт</button>
-            </form>
-
-            <div class="auth-footer">
-                <a href="../index.html" class="back-link">
-                    ← Вернуться на главную
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-</body>
+    </body>
 </html>

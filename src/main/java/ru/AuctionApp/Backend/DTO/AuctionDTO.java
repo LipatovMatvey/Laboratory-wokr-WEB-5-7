@@ -6,22 +6,85 @@ import java.time.LocalDateTime;
 
 @Data
 public class AuctionDTO {
+    /**
+     * Идентификатор аукциона.
+     */
     private Long id;
+
+    /**
+     * Название аукциона.
+     */
     private String title;
+
+    /**
+     * Подробное описание лота.
+     */
     private String description;
+
+    /**
+     * Начальная цена лота.
+     */
     private Double startPrice;
+
+    /**
+     * Текущая цена лота (последняя ставка).
+     */
     private Double currentPrice;
+
+    /**
+     * Минимальный шаг ставки.
+     */
     private Double step;
+
+    /**
+     * Время начала аукциона.
+     */
     private LocalDateTime startTime;
+
+    /**
+     * Время окончания аукциона.
+     */
     private LocalDateTime endTime;
+
+    /**
+     * URL-адрес изображения лота.
+     */
     private String imageUrl;
+
+    /**
+     * Категория лота (например, "электроника", "искусство").
+     */
     private String category;
+
+    /**
+     * Статус аукциона ("ACTIVE", "FINISHED", "CANCELLED").
+     */
     private String status;
+
+    /**
+     * Количество сделанных ставок.
+     */
     private Integer bidsCount;
+
+    /**
+     * Дата и время создания аукциона.
+     */
     private LocalDateTime createdAt;
+
+    /**
+     * Имя создателя аукциона.
+     */
     private String creatorName;
+
+    /**
+     * Идентификатор создателя аукциона.
+     */
     private Long creatorId;
 
+    /**
+     *
+     * @param auction
+     */
     public AuctionDTO(Auction auction) {
         this.id = auction.getId();
         this.title = auction.getTitle();
