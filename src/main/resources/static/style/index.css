@@ -67,7 +67,6 @@ a:hover {
     color: #6c757d !important;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .card-body {
         padding: 2rem !important;

@@ -1,7 +1,6 @@
 let allUsers = [];
 let currentPage = 1;
 const usersPerPage = 10;
-
 $(document).ready(function() {
     console.log('admin-panel.js загружен');
     checkAdminAccess();

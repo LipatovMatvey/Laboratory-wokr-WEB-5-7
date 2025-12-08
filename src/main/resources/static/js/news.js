@@ -22,10 +22,8 @@ function updateServerTime() {
         }
     });
 }
-
 setInterval(updateServerTime, 1000);
 updateServerTime();
-
 
 /**
  * Проверяет статус авторизации пользователя
@@ -128,7 +126,6 @@ function loadNews() {
  */
 function renderNews(news) {
     const $container = $('#news-list');
-    
     if (!news || news.length === 0) {
         $container.html(`
             <div class="col-12 text-center">
@@ -137,7 +134,6 @@ function renderNews(news) {
         `);
         return;
     }
-    
     let html = '';
     news.forEach(item => {
         html += `
@@ -165,9 +161,7 @@ function renderNews(news) {
             </div>
         `;
     });
-    
     $container.html(html);
-    
     $('.read-more-btn').on('click', function() {
         const newsId = $(this).data('news-id');
         showNewsDetail(newsId);

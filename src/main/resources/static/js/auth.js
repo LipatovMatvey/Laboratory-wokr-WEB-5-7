@@ -2,7 +2,6 @@ $('.auth-tab').on('click', function() {
     const tab = $(this).data('tab');
     $('.auth-tab').removeClass('active');
     $(this).addClass('active');
-
     $('.auth-form').removeClass('active');
     $(`#${tab}-form`).addClass('active');
 });
@@ -17,10 +16,8 @@ $('.toggle-password').on('click', function() {
 
 $('#login-form').on('submit', function(e) {
     e.preventDefault();
-
     const email = $('#login-email').val();
     const password = $('#login-password').val();
-
     $.ajax({
         url: "/auth/login",
         method: "POST",
@@ -59,32 +56,26 @@ $('#register-form').on('submit', function(e) {
     formData.append('fullName', $('#register-name').val());
     formData.append('password', $('#register-password').val());
     formData.append('birthDate', $('#birth-date').val());
-
     const birthDate = $('#birth-date').val();
     if (!validateDate(birthDate)) {
         $("#error-birth-date").text("Дата некорректна!");
         return;
     }
-
     const fullName = $('#register-name').val();
     if (!validFullName(fullName)) {
         $('#error-name').text("Некорректные имя и фамилия");
         return;
     }
-
     const password = $('#register-password').val();
     if (password.length < 6) {
         $("#error-password").text("Длина пароля должна быть не менее 6 символов");
         return;
     }
-
     const confirmPassword = $('#register-confirm-password').val();
-
     if (password !== confirmPassword) {
         $("#error-repeat-password").text("Пароли не совпадают");
         return;
     }
-
     $.ajax({
         url: "/auth/register",
         method: "POST",
@@ -108,14 +99,13 @@ $('#register-form').on('submit', function(e) {
     });
 });
 
+
 function validateDate(birthDate) {
     const today = new Date();
     const date = new Date(birthDate);
-
     let age = today.getFullYear() - date.getFullYear();
     const md = today.getMonth() - date.getMonth();
     if (md < 0 || (md === 0 && today.getDate() < date.getDate())) age--;
-
     return age >= 0 && age <= 120 ? true : false;
 };
 

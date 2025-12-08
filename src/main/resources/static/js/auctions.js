@@ -1,12 +1,9 @@
 $(document).ready(function() {
     checkAuth();
-    
     $('#logout-btn').on('click', function() {
         logout();
     });
-    
     loadAuctions();
-    
     $('#auction-filters button').on('click', function() {
         const filter = $(this).data('filter');
         $('#auction-filters button').removeClass('active');
@@ -29,10 +26,8 @@ function updateServerTime() {
         }
     });
 }
-
 setInterval(updateServerTime, 1000);
 updateServerTime();
-
 
 /**
  * Проверяет авторизацию пользователя и обновляет UI
@@ -67,8 +62,6 @@ function updateNavigation(response) {
         $('#logout-item').removeClass('hidden');
         $('#user-cabinet-item').removeClass('hidden');
         localStorage.setItem('user', JSON.stringify(response));
-        
-        // Показываем кнопку создания аукциона для администраторов
         if (response.role === 'admin') {
             $('#create-auction-btn').removeClass('hidden');
         } else {
@@ -129,8 +122,6 @@ function loadAuctions() {
         success: function(auctions) {
             window.allAuctions = auctions;
             renderAuctions(auctions);
-            
-            // Проверяем права пользователя и показываем кнопку создания
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             if (user.role === 'admin') {
                 $('#create-auction-btn').removeClass('hidden');
@@ -156,7 +147,6 @@ function loadAuctions() {
  */
 function renderAuctions(auctions) {
     const $container = $('#auctions-list');
-    
     if (!auctions || auctions.length === 0) {
         $container.html(`
             <div class="col-12 text-center py-5">
@@ -169,7 +159,6 @@ function renderAuctions(auctions) {
         `);
         return;
     }
-    
     let html = '';
     auctions.forEach(auction => {
         const timeLeft = calculateTimeLeft(auction.endTime);
@@ -178,7 +167,6 @@ function renderAuctions(auctions) {
         const badge = isNew ? '<span class="badge bg-success me-2"><i class="bi bi-star-fill me-1"></i>Новый</span>' : '';
         const endingSoon = timeLeft.includes('час') || timeLeft.includes('час') ? '<span class="badge bg-danger me-2"><i class="bi bi-clock me-1"></i>Скоро завершение</span>' : '';
         const creatorBadge = auction.creatorName ? `<span class="badge bg-secondary me-2"><i class="bi bi-person me-1"></i>${auction.creatorName}</span>` : '';
-        
         html += `
             <div class="col-md-6 col-lg-4 mb-4" data-auction-id="${auction.id}" data-is-new="${isNew}" data-time-left="${timeLeft}">
                 <div class="card h-100 auction-card shadow-sm">
@@ -234,7 +222,6 @@ function renderAuctions(auctions) {
             </div>
         `;
     });
-    
     $container.html(html);
 }
 
@@ -300,7 +287,6 @@ function getTimeClass(timeLeft) {
  */
 function filterAuctions(filter) {
     let filteredAuctions = [...window.allAuctions];
-    
     switch(filter) {
         case 'ending':
             filteredAuctions = filteredAuctions.filter(auction => {
@@ -315,7 +301,6 @@ function filterAuctions(filter) {
         default:
             break;
     }
-    
     renderAuctions(filteredAuctions);
 }
 
@@ -328,13 +313,10 @@ function calculateTimeLeft(endTime) {
     const end = new Date(endTime);
     const now = new Date();
     const diff = end - now;
-    
     if (diff <= 0) return 'Завершен';
-    
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
     if (days > 0) return `${days} д ${hours} ч`;
     if (hours > 0) return `${hours} ч ${minutes} мин`;
     if (minutes > 0) return `${minutes} мин`;
@@ -362,7 +344,6 @@ function showNotification(message, type = 'info') {
     const alertClass = type === 'success' ? 'alert-success' : 
                       type === 'danger' ? 'alert-danger' : 
                       type === 'warning' ? 'alert-warning' : 'alert-info';
-    
     const $notification = $(`
         <div class="alert ${alertClass} alert-dismissible fade show" role="alert" 
              style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
@@ -370,9 +351,7 @@ function showNotification(message, type = 'info') {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `);
-    
     $('body').append($notification);
-    
     setTimeout(() => {
         $notification.alert('close');
     }, 3000);

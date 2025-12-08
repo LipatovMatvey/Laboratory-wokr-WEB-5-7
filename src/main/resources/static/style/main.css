@@ -1,14 +1,11 @@
-/* Утилиты */
 .hidden {
     display: none !important;
 }
 
-/* Основные компоненты */
 .page-content {
     min-height: 60vh;
 }
 
-/* Карточки */
 .card {
     transition: transform 0.2s;
     border: 1px solid rgba(0,0,0,0.125);
@@ -56,7 +53,6 @@
     font-weight: bold;
 }
 
-/* Формы */
 .bid-form {
     margin-top: 15px;
 }
@@ -134,7 +130,6 @@ input[type="file"]:disabled {
     transition: all 0.2s ease-in-out;
 }
 
-/* Таблицы */
 .table th {
     font-weight: 600;
     background-color: #f8f9fa;
@@ -188,7 +183,6 @@ input[type="file"]:disabled {
     vertical-align: middle;
 }
 
-/* Вкладки */
 .nav-tabs .nav-link {
     color: #495057;
     border: 1px solid transparent;
@@ -207,7 +201,6 @@ input[type="file"]:disabled {
     font-weight: 500;
 }
 
-/* Пагинация */
 .pagination .page-link {
     color: #0d6efd;
     border: 1px solid #dee2e6;
@@ -224,7 +217,6 @@ input[type="file"]:disabled {
     border-color: #dee2e6;
 }
 
-/* Бейджи */
 .badge {
     font-size: 0.85em;
     padding: 0.35em 0.65em;
@@ -240,12 +232,10 @@ input[type="file"]:disabled {
 .text-danger { color: #dc3545 !important; }
 .text-warning { color: #ffc107 !important; }
 
-/* Спиннеры */
 .spinner-border {
     vertical-align: middle;
 }
 
-/* Уведомления */
 .toast {
     min-width: 300px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -268,7 +258,6 @@ input[type="file"]:disabled {
     z-index: 1050;
 }
 
-/* Форма контроля */
 .form-control.d-none {
     display: none !important;
 }
@@ -277,17 +266,14 @@ input[type="file"]:disabled {
     display: block !important;
 }
 
-/* Текст */
 .text-muted {
     color: #6c757d !important;
 }
 
-/* Jumbotron */
 .jumbotron {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .btn-group-sm .btn {
         font-size: 0.75rem;

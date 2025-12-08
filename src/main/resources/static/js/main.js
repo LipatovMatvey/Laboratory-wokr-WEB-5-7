@@ -128,7 +128,6 @@ function loadFeaturedAuctions() {
  */
 function renderFeaturedAuctions(auctions) {
     const $container = $('#featured-auctions');
-    
     if (!auctions || auctions.length === 0) {
         $container.html(`
             <div class="col-12 text-center">
@@ -138,12 +137,10 @@ function renderFeaturedAuctions(auctions) {
         `);
         return;
     }
-    
     let html = '';
     auctions.forEach(auction => {
         const timeLeft = calculateTimeLeft(auction.endTime);
         const timeClass = timeLeft.includes('час') ? 'text-danger' : 'text-warning';
-        
         html += `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card auction-card">
@@ -161,7 +158,6 @@ function renderFeaturedAuctions(auctions) {
             </div>
         `;
     });
-    
     $container.html(html);
 }
 
@@ -174,12 +170,9 @@ function calculateTimeLeft(endTime) {
     const end = new Date(endTime);
     const now = new Date();
     const diff = end - now;
-    
     if (diff <= 0) return 'Завершен';
-    
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
     if (days > 0) return `${days} дней`;
     if (hours > 0) return `${hours} часов`;
     return 'Менее часа';

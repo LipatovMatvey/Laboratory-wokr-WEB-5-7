@@ -1,37 +1,26 @@
 $(document).ready(function() {
     console.log('=== user-cabinet.js загружен ===');
-    
-    let pendingAvatarFile = null; // Файл аватара, ожидающий сохранения
-    let originalAvatarUrl = null; // Исходный URL аватара
-    
+    let pendingAvatarFile = null;
+    let originalAvatarUrl = null;
     checkAuth();
-    
     $('#logout-btn').on('click', function() {
         logout();
     });
-    
     loadUserData();
     loadUserBalance();
-    
     $('#user-data-form').on('submit', function(e) {
         e.preventDefault();
         updateUserData();
     });
-    
-    // Изменено: только предпросмотр, без автоматической загрузки
     $('#avatar-upload').on('change', function(e) {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             previewAvatar(file);
         }
     });
-    
-    // Добавлено: обработчик кнопки удаления фото
     $(document).on('click', '#remove-avatar-btn', function() {
         removeAvatarPreview();
     });
-    
-    // Обработчик кнопки пополнения баланса - добавим отладку
     $(document).on('click', '#add-balance-btn', function(e) {
         e.preventDefault();
         console.log('=== Кнопка "Пополнить баланс" нажата ===');
@@ -39,7 +28,6 @@ $(document).ready(function() {
         console.log('Событие:', e);
         addFixedBalance();
     });
-    
     loadUserBids();
     loadWonLots();
 });
@@ -58,10 +46,8 @@ function updateServerTime() {
         }
     });
 }
-
 setInterval(updateServerTime, 1000);
 updateServerTime();
-
 
 /**
  * Загружает текущий баланс пользователя с сервера.
@@ -72,7 +58,6 @@ function loadUserBalance() {
         console.log('Пользователь не найден в localStorage');
         return;
     }
-    
     console.log('Загрузка баланса...');
     $.ajax({
         url: "/api/balance",
@@ -80,15 +65,12 @@ function loadUserBalance() {
         success: function(response) {
             console.log('Баланс загружен:', response.balance);
             updateBalanceDisplay(response.balance);
-            
-            // Обновляем баланс в localStorage
             const user = JSON.parse(userStr);
             user.balance = response.balance;
             localStorage.setItem('user', JSON.stringify(user));
         },
         error: function(xhr) {
             console.error('Ошибка при загрузке баланса:', xhr.responseJSON);
-            // Пробуем получить баланс из localStorage
             const user = JSON.parse(userStr);
             if (user.balance !== undefined) {
                 updateBalanceDisplay(user.balance);
@@ -116,60 +98,44 @@ function updateBalanceDisplay(balance) {
  */
 function addFixedBalance() {
     console.log('=== addFixedBalance вызвана ===');
-    
-    // Проверяем jQuery
     if (typeof $ === 'undefined') {
         console.error('jQuery не загружен!');
         return;
     }
-    
     const $button = $('#add-balance-btn');
     if ($button.length === 0) {
         console.error('Кнопка #add-balance-btn не найдена!');
         return;
     }
-    
     console.log('Кнопка найдена, текст:', $button.text());
-    
     const userStr = localStorage.getItem('user');
     if (!userStr) {
         console.error('Пользователь не найден в localStorage');
         alert('Ошибка: пользователь не авторизован');
         return;
     }
-    
     const user = JSON.parse(userStr);
     console.log('Данные пользователя:', user);
-    
     if (!user.authenticated) {
         alert('Ошибка: пользователь не авторизован');
         return;
     }
-    
     if (!confirm('Вы уверены, что хотите пополнить баланс на 10,000 ₽?')) {
         return;
     }
-    
     const originalText = $button.html();
     $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Пополнение...');
-    
     console.log('Отправка POST запроса на /api/balance/add-fixed');
-    
-    // Отправляем AJAX запрос
     $.ajax({
         url: "/api/balance/add-fixed",
         method: "POST",
         dataType: "json",
         success: function(response) {
             console.log('Успешный ответ сервера:', response);
-            
             if (response && response.newBalance !== undefined) {
                 updateBalanceDisplay(response.newBalance);
-                
-                // Обновляем localStorage
                 user.balance = response.newBalance;
                 localStorage.setItem('user', JSON.stringify(user));
-                
                 alert(`✅ Баланс успешно пополнен!\nНовый баланс: ${response.newBalance.toLocaleString('ru-RU')} ₽`);
             } else {
                 alert('Ошибка: некорректный ответ от сервера');
@@ -193,7 +159,6 @@ function addFixedBalance() {
             } catch (e) {
                 errorMessage = xhr.statusText || 'Сервер недоступен';
             }
-            
             alert(`❌ ${errorMessage}`);
         },
         complete: function() {
@@ -209,11 +174,9 @@ function addFixedBalance() {
  */
 function showUserNotification(message, type = 'info') {
     $('.user-notification').remove();
-    
     const alertClass = type === 'success' ? 'alert-success' : 
                       type === 'danger' ? 'alert-danger' : 
                       type === 'warning' ? 'alert-warning' : 'alert-info';
-    
     const $notification = $(`
         <div class="alert ${alertClass} alert-dismissible fade show user-notification" role="alert" 
              style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;">
@@ -221,9 +184,7 @@ function showUserNotification(message, type = 'info') {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `);
-    
     $('body').append($notification);
-    
     setTimeout(() => {
         $notification.alert('close');
     }, 3000);
@@ -239,10 +200,8 @@ function checkAuth() {
         method: "GET",
         success: function(response) {
             updateNavigation(response);
-            
             if (response.authenticated && response.role === 'admin') {
                 $('#admin-tab').show();
-                
                 if (typeof initAdminPanel === 'function') {
                     initAdminPanel();
                 }
@@ -266,7 +225,6 @@ function updateNavigation(response) {
         $('#login-item').addClass('hidden');
         $('#logout-item').removeClass('hidden');
         $('#user-cabinet-item').removeClass('hidden');
-        
         const userData = {
             authenticated: true,
             id: response.id,
@@ -277,7 +235,6 @@ function updateNavigation(response) {
             avatarUrl: response.avatarUrl
         };
         localStorage.setItem('user', JSON.stringify(userData));
-        
         if (response.role === 'admin') {
             $('#admin-tab').show();
             $('#admin-panel-item').addClass('hidden');
@@ -333,37 +290,24 @@ function loadUserData() {
         window.location.href = 'auth.html';
         return;
     }
-    
     const user = JSON.parse(userStr);
-    
     if (!user.authenticated) {
         window.location.href = 'auth.html';
         return;
     }
-    
     $('#user-name').val(user.fullName || '');
     $('#user-email').val(user.email || '');
     $('#user-birthdate').val(user.birthdate || '');
     $('#display-role').text(getRoleDisplayName(user.role) || 'Пользователь');
-    
-    // Сохраняем исходный URL аватара
     originalAvatarUrl = user.avatarUrl || '/uploads/avatars/img.png';
-    
-    // Отображаем текущий аватар в предпросмотре
     $('#user-avatar-preview').attr('src', originalAvatarUrl);
-    
-    // Сбрасываем ожидающий файл
     pendingAvatarFile = null;
     $('#avatar-file-info').hide();
     $('#remove-avatar-btn').hide();
-    
-    // Очищаем input файла
     $('#avatar-upload').val('');
-    
     if (user.balance !== undefined) {
         updateBalanceDisplay(user.balance);
     }
-    
     $.ajax({
         url: `/api/users/${user.id}`,
         method: "GET",
@@ -371,14 +315,11 @@ function loadUserData() {
             $('#user-name').val(userData.fullName || '');
             $('#user-email').val(userData.email || '');
             $('#user-birthdate').val(userData.birthDate || '');
-            
-            // Обновляем баланс
             if (userData.balance !== undefined) {
                 updateBalanceDisplay(userData.balance);
                 user.balance = userData.balance; // Обновляем в объекте пользователя
                 localStorage.setItem('user', JSON.stringify(user)); // Сохраняем в localStorage
             }
-            
             if (userData.avatarPath) {
                 $('#user-avatar-preview').attr('src', userData.avatarPath);
                 originalAvatarUrl = userData.avatarPath;
@@ -386,12 +327,10 @@ function loadUserData() {
                 $('#user-avatar-preview').attr('src', '/uploads/avatars/img.png');
                 originalAvatarUrl = '/uploads/avatars/img.png';
             }
-            
             user.fullName = userData.fullName;
             user.email = userData.email;
             user.birthdate = userData.birthDate;
             localStorage.setItem('user', JSON.stringify(user));
-            
             $('#user-info').text(userData.fullName || 'Пользователь');
         },
         error: function(xhr) {
@@ -406,39 +345,28 @@ function loadUserData() {
  */
 function previewAvatar(file) {
     if (!file) return;
-    
     if (!file.type.startsWith('image/')) {
         showUserNotification('Пожалуйста, выберите файл изображения (JPG, PNG, GIF)', 'warning');
         $('#avatar-upload').val('');
         return;
     }
-    
     if (file.size > 5 * 1024 * 1024) {
         showUserNotification('Размер файла не должен превышать 5MB', 'warning');
         $('#avatar-upload').val('');
         return;
     }
-    
-    // Сохраняем файл для последующей загрузки при сохранении
     pendingAvatarFile = file;
-    
-    // Показываем информацию о файле
     const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
     $('#avatar-file-info').html(`
         Выбран файл: ${file.name}<br>
         Размер: ${fileSizeMB} MB
     `).show();
-    
-    // Показываем предпросмотр
     const reader = new FileReader();
     reader.onload = function(e) {
         $('#user-avatar-preview').attr('src', e.target.result);
     };
     reader.readAsDataURL(file);
-    
-    // Показываем кнопку удаления
     $('#remove-avatar-btn').show();
-    
     showUserNotification('Фото загружено для предпросмотра. Нажмите "Сохранить изменения" для применения.', 'info');
 }
 
@@ -446,19 +374,11 @@ function previewAvatar(file) {
  * Удаляет предпросмотр аватара и сбрасывает состояние.
  */
 function removeAvatarPreview() {
-    // Возвращаем исходный аватар
     $('#user-avatar-preview').attr('src', originalAvatarUrl);
-    
-    // Сбрасываем ожидающий файл
     pendingAvatarFile = null;
-    
-    // Очищаем input файла
     $('#avatar-upload').val('');
-    
-    // Скрываем информацию о файле и кнопку удаления
     $('#avatar-file-info').hide();
     $('#remove-avatar-btn').hide();
-    
     showUserNotification('Изменения фото отменены. Нажмите "Сохранить изменения" для применения.', 'info');
 }
 
@@ -473,47 +393,36 @@ function updateUserData() {
         window.location.href = 'auth.html';
         return;
     }
-    
     const user = JSON.parse(userStr);
-    
-    // Проверяем валидность данных формы
     const userData = {
         fullName: $('#user-name').val().trim(),
         email: $('#user-email').val().trim(),
         birthDate: $('#user-birthdate').val() || '',
         preserveVisits: true
     };
-    
     if (!userData.fullName) {
         showUserNotification('Пожалуйста, введите имя', 'warning');
         $('#user-name').focus();
         return;
     }
-    
     if (!userData.email) {
         showUserNotification('Пожалуйста, введите email', 'warning');
         $('#user-email').focus();
         return;
     }
-    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
         showUserNotification('Пожалуйста, введите корректный email адрес', 'warning');
         $('#user-email').focus();
         return;
     }
-    
     const $submitBtn = $('#user-data-form button[type="submit"]');
     const originalText = $submitBtn.text();
     $submitBtn.prop('disabled', true).text('Сохранение...');
-    
     $('.user-notification').remove();
-    
-    // Если есть файл аватара, загружаем его вместе с данными
     if (pendingAvatarFile) {
         uploadAvatarWithUserData(user, userData, $submitBtn, originalText);
     } else {
-        // Если файла нет, просто обновляем данные пользователя
         updateUserDataOnly(user, userData, $submitBtn, originalText);
     }
 }
@@ -528,8 +437,6 @@ function updateUserData() {
 function uploadAvatarWithUserData(user, userData, $submitBtn, originalText) {
     const formData = new FormData();
     formData.append('avatar', pendingAvatarFile);
-    
-    // Отправляем аватар
     $.ajax({
         url: `/api/users/${user.id}/avatar`,
         method: "POST",
@@ -537,7 +444,6 @@ function uploadAvatarWithUserData(user, userData, $submitBtn, originalText) {
         processData: false,
         contentType: false,
         success: function(avatarResponse) {
-            // После успешной загрузки аватара обновляем данные пользователя
             userData.avatarPath = avatarResponse.avatarUrl;
             updateUserDataOnly(user, userData, $submitBtn, originalText, true);
         },
@@ -564,28 +470,20 @@ function updateUserDataOnly(user, userData, $submitBtn, originalText, avatarUpda
         contentType: "application/json",
         data: JSON.stringify(userData),
         success: function(updatedUser) {
-            // Обновляем данные в localStorage
             user.fullName = updatedUser.fullName;
             user.email = updatedUser.email;
             user.birthdate = updatedUser.birthDate;
-            
             if (avatarUpdated && updatedUser.avatarPath) {
                 user.avatarUrl = updatedUser.avatarPath;
                 originalAvatarUrl = updatedUser.avatarPath;
             }
-            
             localStorage.setItem('user', JSON.stringify(user));
-            
-            // Обновляем отображение
             $('#user-info').text(updatedUser.fullName);
             $('#user-avatar-preview').attr('src', user.avatarUrl || '/uploads/avatars/img.png');
-            
-            // Сбрасываем состояние аватара
             pendingAvatarFile = null;
             $('#avatar-file-info').hide();
             $('#remove-avatar-btn').hide();
             $('#avatar-upload').val('');
-            
             showUserNotification('✅ Данные успешно обновлены!' + (avatarUpdated ? ' Фото сохранено.' : ''), 'success');
         },
         error: function(xhr) {
@@ -604,9 +502,7 @@ function updateUserDataOnly(user, userData, $submitBtn, originalText, avatarUpda
 function loadUserBids() {
     const userStr = localStorage.getItem('user');
     if (!userStr) return;
-    
     const user = JSON.parse(userStr);
-    
     $.ajax({
         url: `/api/users/${user.id}/bids`,
         method: "GET",
@@ -625,17 +521,14 @@ function loadUserBids() {
  */
 function renderUserBids(bids) {
     const $container = $('#user-bids');
-    
     if (!bids || bids.length === 0) {
         $container.html('<p class="text-muted">У вас пока нет ставок</p>');
         return;
     }
-    
     let html = '';
     bids.forEach(bid => {
         const statusClass = bid.isWinning ? 'text-success' : 'text-secondary';
         const statusText = bid.isWinning ? 'Лидирующая' : 'Перебита';
-        
         html += `
             <div class="bid-item mb-3 pb-2 border-bottom">
                 <div class="d-flex justify-content-between align-items-start">
@@ -651,7 +544,6 @@ function renderUserBids(bids) {
             </div>
         `;
     });
-    
     $container.html(html);
 }
 
@@ -661,9 +553,7 @@ function renderUserBids(bids) {
 function loadWonLots() {
     const userStr = localStorage.getItem('user');
     if (!userStr) return;
-    
     const user = JSON.parse(userStr);
-    
     $.ajax({
         url: `/api/users/${user.id}/won-lots`,
         method: "GET",
@@ -682,12 +572,10 @@ function loadWonLots() {
  */
 function renderWonLots(wonLots) {
     const $container = $('#won-lots');
-    
     if (!wonLots || wonLots.length === 0) {
         $container.html('<p class="text-muted">У вас пока нет выигранных лотов</p>');
         return;
     }
-    
     let html = '';
     wonLots.forEach(lot => {
         html += `
@@ -700,6 +588,5 @@ function renderWonLots(wonLots) {
             </div>
         `;
     });
-    
     $container.html(html);
 }
