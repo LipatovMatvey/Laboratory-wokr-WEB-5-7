@@ -1,0 +1,75 @@
+/* Блок баланса */
+.balance-card {
+    border: 1px solid #dee2e6;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transition: all 0.3s ease;
+}
+
+.balance-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Отображение суммы баланса */
+.balance-amount {
+    color: #28a745;
+    text-align: center;
+}
+
+.balance-value {
+    color: #198754;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.balance-currency {
+    color: #495057;
+    font-size: 1.2rem;
+    vertical-align: super;
+}
+
+/* Кнопка пополнения баланса */
+#add-balance-btn {
+    background: linear-gradient(45deg, #20c997, #17a2b8);
+    border: none;
+    font-weight: 600;
+    padding: 10px;
+    transition: all 0.3s ease;
+}
+
+#add-balance-btn:hover {
+    background: linear-gradient(45deg, #1ea088, #138496);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(32, 201, 151, 0.3);
+}
+
+#add-balance-btn:disabled {
+    background: #6c757d;
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Анимации баланса */
+@keyframes balancePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.balance-pulse {
+    animation: balancePulse 0.5s ease;
+}
+
+/* Индикатор загрузки баланса */
+.balance-loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+}
