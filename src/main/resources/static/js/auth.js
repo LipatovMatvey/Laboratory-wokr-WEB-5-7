@@ -99,7 +99,11 @@ $('#register-form').on('submit', function(e) {
     });
 });
 
-
+/**
+ * Проверяет корректность даты рождения.
+ * @param {string} birthDate - Дата рождения в строковом формате (YYYY-MM-DD)
+ * @returns {boolean} - true если дата корректна, false если некорректна
+ */
 function validateDate(birthDate) {
     const today = new Date();
     const date = new Date(birthDate);
@@ -109,6 +113,11 @@ function validateDate(birthDate) {
     return age >= 0 && age <= 120 ? true : false;
 };
 
+/**
+ * Проверяет корректность полного имени пользователя.
+ * @param {string} fullName - Полное имя пользователя
+ * @returns {boolean} - true если имя корректно, false если некорректно
+ */
 function validFullName(fullName) {
     if (typeof fullName !== "string") return false;
     fullName = fullName.trim();
