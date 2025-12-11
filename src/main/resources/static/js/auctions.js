@@ -331,8 +331,8 @@ function calculateTimeLeft(endTime) {
 function isAuctionNew(createdAt) {
     const created = new Date(createdAt);
     const now = new Date();
-    const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-    return diffDays < 7;
+    const diffDays = (now - created) / (1000 * 60 * 60);
+    return diffDays < 24;
 }
 
 /**

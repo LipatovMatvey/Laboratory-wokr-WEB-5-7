@@ -98,10 +98,6 @@ function updateBalanceDisplay(balance) {
  */
 function addFixedBalance() {
     console.log('=== addFixedBalance вызвана ===');
-    if (typeof $ === 'undefined') {
-        console.error('jQuery не загружен!');
-        return;
-    }
     const $button = $('#add-balance-btn');
     if ($button.length === 0) {
         console.error('Кнопка #add-balance-btn не найдена!');
@@ -111,16 +107,15 @@ function addFixedBalance() {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
         console.error('Пользователь не найден в localStorage');
-        alert('Ошибка: пользователь не авторизован');
+        message = 'Ошибка: пользователь не авторизован';
+        showUserNotification(message, "warning");
         return;
     }
     const user = JSON.parse(userStr);
     console.log('Данные пользователя:', user);
     if (!user.authenticated) {
-        alert('Ошибка: пользователь не авторизован');
-        return;
-    }
-    if (!confirm('Вы уверены, что хотите пополнить баланс на 10,000 ₽?')) {
+        message = 'Ошибка: пользователь не авторизован';
+        showUserNotification(message, "warning");
         return;
     }
     const originalText = $button.html();
@@ -136,9 +131,11 @@ function addFixedBalance() {
                 updateBalanceDisplay(response.newBalance);
                 user.balance = response.newBalance;
                 localStorage.setItem('user', JSON.stringify(user));
-                alert(`✅ Баланс успешно пополнен!\nНовый баланс: ${response.newBalance.toLocaleString('ru-RU')} ₽`);
+                message = "✅ Баланс успешно пополнен!\nНовый баланс: " + `${response.newBalance.toLocaleString('ru-RU')}` + "₽";
+                showUserNotification(message);
             } else {
-                alert('Ошибка: некорректный ответ от сервера');
+                message = 'Ошибка: некорректный ответ от сервера';
+                showUserNotification(message, "danger");
             }
         },
         error: function(xhr, status, error) {
@@ -149,7 +146,6 @@ function addFixedBalance() {
                 readyState: xhr.readyState,
                 statusText: xhr.statusText
             });
-            
             let errorMessage = 'Не удалось пополнить баланс';
             try {
                 const response = JSON.parse(xhr.responseText);
@@ -159,7 +155,8 @@ function addFixedBalance() {
             } catch (e) {
                 errorMessage = xhr.statusText || 'Сервер недоступен';
             }
-            alert(`❌ ${errorMessage}`);
+            message = `❌ ${errorMessage}`;
+            showUserNotification(message, "warning")
         },
         complete: function() {
             $button.prop('disabled', false).html(originalText);
@@ -232,7 +229,8 @@ function updateNavigation(response) {
             email: response.email,
             birthdate: response.birthdate,
             role: response.role,
-            avatarUrl: response.avatarUrl
+            avatarUrl: response.avatarUrl,
+            balance: response.balance || 0
         };
         localStorage.setItem('user', JSON.stringify(userData));
         if (response.role === 'admin') {
@@ -317,8 +315,8 @@ function loadUserData() {
             $('#user-birthdate').val(userData.birthDate || '');
             if (userData.balance !== undefined) {
                 updateBalanceDisplay(userData.balance);
-                user.balance = userData.balance; // Обновляем в объекте пользователя
-                localStorage.setItem('user', JSON.stringify(user)); // Сохраняем в localStorage
+                user.balance = userData.balance;
+                localStorage.setItem('user', JSON.stringify(user));
             }
             if (userData.avatarPath) {
                 $('#user-avatar-preview').attr('src', userData.avatarPath);
@@ -502,15 +500,28 @@ function updateUserDataOnly(user, userData, $submitBtn, originalText, avatarUpda
 function loadUserBids() {
     const userStr = localStorage.getItem('user');
     if (!userStr) return;
+    
     const user = JSON.parse(userStr);
+    console.log('Загрузка ставок для пользователя:', user.id);
+    
     $.ajax({
         url: `/api/users/${user.id}/bids`,
         method: "GET",
         success: function(bids) {
+            console.log('Ставки загружены:', bids);
             renderUserBids(bids);
         },
         error: function(xhr) {
-            $('#user-bids').html('<p class="text-muted">У вас пока нет ставок</p>');
+            console.error('Ошибка при загрузке ставок:', xhr.responseJSON);
+            $('#user-bids').html(`
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Не удалось загрузить историю ставок
+                    <button onclick="loadUserBids()" class="btn btn-sm btn-outline-secondary mt-2">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Повторить
+                    </button>
+                </div>
+            `);
         }
     });
 }
@@ -521,29 +532,54 @@ function loadUserBids() {
  */
 function renderUserBids(bids) {
     const $container = $('#user-bids');
+    
     if (!bids || bids.length === 0) {
-        $container.html('<p class="text-muted">У вас пока нет ставок</p>');
+        $container.html(`
+            <div class="text-center py-4">
+                <i class="bi bi-cash-stack text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">У вас пока нет ставок</p>
+                <a href="auctions.html" class="btn btn-primary btn-sm mt-2">
+                    <i class="bi bi-cash-stack me-1"></i>Перейти к аукционам
+                </a>
+            </div>
+        `);
         return;
     }
+    
     let html = '';
     bids.forEach(bid => {
         const statusClass = bid.isWinning ? 'text-success' : 'text-secondary';
-        const statusText = bid.isWinning ? 'Лидирующая' : 'Перебита';
+        const statusText = bid.isWinning ? 
+            '<span class="badge bg-success"><i class="bi bi-trophy me-1"></i>Лидирует</span>' : 
+            '<span class="badge bg-secondary"><i class="bi bi-clock-history me-1"></i>Перебита</span>';
+        const date = new Date(bid.createdAt).toLocaleString('ru-RU');
+        const auctionLink = `auction-detail.html?id=${bid.auctionId}`;
+        
         html += `
-            <div class="bid-item mb-3 pb-2 border-bottom">
+            <div class="bid-item mb-3 pb-3 border-bottom">
                 <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6 class="mb-1">${bid.auctionTitle}</h6>
-                        <small class="text-muted">${new Date(bid.createdAt).toLocaleString('ru-RU')}</small>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">
+                            <a href="${auctionLink}" class="text-decoration-none">
+                                ${bid.auctionTitle || 'Аукцион #' + bid.auctionId}
+                            </a>
+                        </h6>
+                        <div class="d-flex align-items-center gap-2">
+                            ${statusText}
+                            <small class="text-muted"><i class="bi bi-calendar me-1"></i>${date}</small>
+                        </div>
                     </div>
-                    <div class="text-end">
-                        <strong class="d-block">${bid.amount.toLocaleString()} ₽</strong>
-                        <small class="${statusClass}">${statusText}</small>
+                    <div class="text-end ms-3">
+                        <strong class="d-block fs-5 text-primary">${formatPrice(bid.amount)} ₽</strong>
+                        <a href="${auctionLink}" class="btn btn-sm btn-outline-primary mt-1">
+                            <i class="bi bi-arrow-right me-1"></i>К аукциону
+                        </a>
                     </div>
                 </div>
             </div>
         `;
     });
+    
     $container.html(html);
 }
 
@@ -553,15 +589,28 @@ function renderUserBids(bids) {
 function loadWonLots() {
     const userStr = localStorage.getItem('user');
     if (!userStr) return;
+    
     const user = JSON.parse(userStr);
+    console.log('Загрузка выигранных лотов для пользователя:', user.id);
+    
     $.ajax({
         url: `/api/users/${user.id}/won-lots`,
         method: "GET",
         success: function(wonLots) {
+            console.log('Выигранные лоты загружены:', wonLots);
             renderWonLots(wonLots);
         },
         error: function(xhr) {
-            $('#won-lots').html('<p class="text-muted">У вас пока нет выигранных лотов</p>');
+            console.error('Ошибка при загрузке выигранных лотов:', xhr.responseJSON);
+            $('#won-lots').html(`
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Не удалось загрузить выигранные лоты
+                    <button onclick="loadWonLots()" class="btn btn-sm btn-outline-secondary mt-2">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Повторить
+                    </button>
+                </div>
+            `);
         }
     });
 }
@@ -572,21 +621,68 @@ function loadWonLots() {
  */
 function renderWonLots(wonLots) {
     const $container = $('#won-lots');
+    
     if (!wonLots || wonLots.length === 0) {
-        $container.html('<p class="text-muted">У вас пока нет выигранных лотов</p>');
+        $container.html(`
+            <div class="text-center py-4">
+                <i class="bi bi-trophy text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">У вас пока нет выигранных лотов</p>
+                <a href="auctions.html" class="btn btn-primary btn-sm mt-2">
+                    <i class="bi bi-cash-stack me-1"></i>Перейти к аукционам
+                </a>
+            </div>
+        `);
         return;
     }
+    
     let html = '';
     wonLots.forEach(lot => {
+        const winDate = new Date(lot.winDate).toLocaleDateString('ru-RU');
+        const imageUrl = lot.imageUrl || '/uploads/auctions/NOFOTO.jpg';
+        
         html += `
-            <div class="won-lot-item mb-3 pb-2 border-bottom">
-                <h6 class="mb-1">${lot.title}</h6>
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">Выиграна: ${new Date(lot.winDate).toLocaleDateString('ru-RU')}</small>
-                    <strong class="text-success">${lot.finalPrice.toLocaleString()} ₽</strong>
+            <div class="won-lot-item mb-3">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-3">
+                                <img src="${imageUrl}" 
+                                     class="img-fluid rounded" 
+                                     alt="${lot.title}"
+                                     style="height: 80px; object-fit: cover;"
+                                     onerror="this.onerror=null; this.src='/uploads/auctions/NOFOTO.jpg'">
+                            </div>
+                            <div class="col-9">
+                                <h6 class="card-title text-success mb-1">
+                                    <i class="bi bi-trophy me-2"></i>${lot.title}
+                                </h6>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div>
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar-check me-1"></i>Выиграна: ${winDate}
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <strong class="text-success fs-5">${formatPrice(lot.finalPrice)} ₽</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
     });
+    
     $container.html(html);
+}
+
+/**
+ * Форматирует цену
+ */
+function formatPrice(price) {
+    return parseFloat(price).toLocaleString('ru-RU', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
 }

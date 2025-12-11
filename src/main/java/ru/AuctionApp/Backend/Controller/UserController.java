@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.AuctionApp.Backend.Entity.User;
 import ru.AuctionApp.Backend.Repositories.UsersRepository;
+import ru.AuctionApp.Backend.Services.BidService;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,9 +19,14 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-
+    /**
+     *
+     */
     @Autowired
     private UsersRepository usersRepository;
+
+    @Autowired
+    private BidService bidService;
 
     /**
      * Получает список всех пользователей (доступно только администраторам)
@@ -370,23 +376,37 @@ public class UserController {
     }
 
     /**
-     * Получает список ставок пользователя (заглушка)
+     * Получает список ставок пользователя
      * @param id ID пользователя
-     * @return ResponseEntity с пустым списком (требует реализации)
+     * @return ResponseEntity со списком ставок пользователя
      */
     @GetMapping("/{id}/bids")
     public ResponseEntity<?> getUserBids(@PathVariable Long id) {
-        return ResponseEntity.ok(Collections.emptyList());
+        try {
+            List<Map<String, Object>> bids = bidService.getUserBids(id);
+            return ResponseEntity.ok(bids);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Ошибка при получении ставок: " + e.getMessage()));
+        }
     }
 
     /**
-     * Получает список выигранных лотов пользователя (заглушка)
+     * Получает список выигранных лотов пользователя
      * @param id ID пользователя
-     * @return ResponseEntity с пустым списком (требует реализации)
+     * @return ResponseEntity со списком выигранных лотов
      */
     @GetMapping("/{id}/won-lots")
     public ResponseEntity<?> getWonLots(@PathVariable Long id) {
-        return ResponseEntity.ok(Collections.emptyList());
+        try {
+            List<Map<String, Object>> wonLots = bidService.getUserWonLots(id);
+            return ResponseEntity.ok(wonLots);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Ошибка при получении выигранных лотов: " + e.getMessage()));
+        }
     }
 
     /**
@@ -496,7 +516,6 @@ public class UserController {
         }
     }
 
-
     /**
      * Создает нового пользователя с возможностью загрузки аватарки
      * @param email Email пользователя
@@ -598,5 +617,4 @@ public class UserController {
                     .body(Map.of("error", "Ошибка при создании пользователя: " + e.getMessage()));
         }
     }
-
 }

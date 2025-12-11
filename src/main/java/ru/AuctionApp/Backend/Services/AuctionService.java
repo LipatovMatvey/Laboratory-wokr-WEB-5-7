@@ -109,7 +109,9 @@ public class AuctionService {
     public List<AuctionDTO> getActiveAuctions() {
         LocalDateTime now = LocalDateTime.now();
         List<Auction> auctions = auctionRepository.findByStatusAndEndTimeAfterOrderByEndTimeAsc("ACTIVE", now);
-        return auctions.stream().map(AuctionDTO::new).collect(Collectors.toList());
+        return auctions.stream()
+                .map(AuctionDTO::new)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -132,5 +134,17 @@ public class AuctionService {
     public List<AuctionDTO> getUserAuctions(Long userId) {
         List<Auction> auctions = auctionRepository.findByCreatorIdOrderByCreatedAtDesc(userId);
         return auctions.stream().map(AuctionDTO::new).collect(Collectors.toList());
+    }
+
+    /**
+     * Получает аукционы для главной страницы (первые 6 активных)
+     */
+    public List<AuctionDTO> getFeaturedAuctions() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Auction> auctions = auctionRepository.findByStatusAndEndTimeAfterOrderByEndTimeAsc("ACTIVE", now);
+        return auctions.stream()
+                .limit(6)
+                .map(AuctionDTO::new)
+                .collect(Collectors.toList());
     }
 }

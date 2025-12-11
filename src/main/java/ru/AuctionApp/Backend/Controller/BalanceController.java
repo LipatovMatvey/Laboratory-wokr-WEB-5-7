@@ -38,7 +38,6 @@ public class BalanceController {
 
     /**
      * Получает текущий баланс пользователя.
-     *
      * @param session - текущая HTTP-сессия
      * @return - JSON с балансом пользователя
      */
@@ -103,7 +102,6 @@ public class BalanceController {
     ) {
         try {
             Long currentUserId = (Long) session.getAttribute("userId");
-
             if (currentUserId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));

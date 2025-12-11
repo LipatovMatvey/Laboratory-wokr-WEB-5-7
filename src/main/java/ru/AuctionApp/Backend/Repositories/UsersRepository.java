@@ -10,7 +10,6 @@ public interface UsersRepository extends JpaRepository<User, Long> {
 
     /**
      * Ищет пользователя по email.
-     *
      * @param email - электронная почта пользователя
      * @return - пользователь или null, если не найден
      */
@@ -18,7 +17,6 @@ public interface UsersRepository extends JpaRepository<User, Long> {
 
     /**
      * Ищет пользователя по полному имени.
-     *
      * @param fullName - ФИО пользователя
      * @return - пользователь или null, если не найден
      */
@@ -26,14 +24,12 @@ public interface UsersRepository extends JpaRepository<User, Long> {
 
     /**
      * Возвращает всех пользователей, отсортированных по ID.
-     *
      * @return - список всех пользователей, упорядоченный по возрастанию ID
      */
     List<User> findAllByOrderById();
 
     /**
      * Проверяет существование пользователя с указанным email.
-     *
      * @param email - электронная почта для проверки
      * @return - true, если пользователь существует, иначе false
      */
@@ -41,7 +37,6 @@ public interface UsersRepository extends JpaRepository<User, Long> {
 
     /**
      * Проверяет существование пользователя с указанным полным именем.
-     *
      * @param fullName - ФИО для проверки
      * @return - true, если пользователь существует, иначе false
      */
@@ -49,7 +44,6 @@ public interface UsersRepository extends JpaRepository<User, Long> {
 
     /**
      * Проверяет существование заблокированного пользователя с указанным email.
-     *
      * @param email - электронная почта для проверки
      * @return - true, если заблокированный пользователь существует, иначе false
      */

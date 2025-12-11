@@ -69,18 +69,18 @@ function setupEventHandlers() {
         const password = $button.data('password') || '';
         if ($span.text().includes('*')) {
             $span.text(password);
-            $button.html('<i class="bi bi-eye-slash"></i>');
+            $button.html('🙈');
         } else {
             $span.text('*'.repeat(password.length || 6));
-            $button.html('<i class="bi bi-eye"></i>');
+            $button.html('👁️');
         }
     });
-    $(document).on('click', '.toggle-ban-btn', function(e) {
-        e.stopPropagation();
-        const userId = $(this).data('user-id');
-        const banned = $(this).data('banned');
-        toggleUserBan(userId, banned, $(this).closest('tr'));
-    });
+//    $(document).on('click', '.toggle-ban-btn', function(e) {
+//        e.stopPropagation();
+//        const userId = $(this).data('user-id');
+//        const banned = $(this).data('banned');
+//        toggleUserBan(userId, banned, $(this).closest('tr'));
+//    });
 }
 
 /**
@@ -210,7 +210,7 @@ function renderUsersTable() {
                         <span class="password-field" data-password="${password}">${'*'.repeat(password.length || 6)}</span>
                         <button class="btn btn-sm btn-outline-secondary toggle-password-btn ms-1" 
                                 data-password="${password}" title="Показать/скрыть пароль">
-                            <i class="bi bi-eye"></i>
+                            👁️
                         </button>
                     </div>
                 </td>
@@ -231,23 +231,13 @@ function renderUsersTable() {
                         <span class="${statusClass} fw-medium">
                             ${statusText}
                         </span>
-                        ${user.bannedStatus ? `
-                            <button class="btn btn-sm btn-outline-success ms-2 toggle-ban-btn" 
-                                    data-user-id="${user.id}" data-banned="false" title="Разблокировать">
-                                <i class="bi bi-unlock"></i>
-                            </button>
-                        ` : `
-                            <button class="btn btn-sm btn-outline-danger ms-2 toggle-ban-btn" 
-                                    data-user-id="${user.id}" data-banned="true" title="Заблокировать">
-                                <i class="bi bi-lock"></i>
-                            </button>
-                        `}
                     </div>
                 </td>
             </tr>
         `;
     });
     $tbody.html(html);
+
 }
 
 /**

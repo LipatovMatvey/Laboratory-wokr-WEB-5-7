@@ -8,7 +8,6 @@ import java.util.List;
 public interface AuctionRepository extends JpaRepository<Auction, Long> {
     /**
      * Ищет аукционы по статусу, отсортированные по дате создания (от новых к старым).
-     *
      * @param status - статус аукциона ("ACTIVE", "FINISHED", "CANCELLED")
      * @return - список аукционов с указанным статусом
      */
@@ -16,7 +15,6 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     /**
      * Ищет аукционы по статусу, у которых время начала ещё не наступило.
-     *
      * @param status - статус аукциона
      * @param now - текущее время
      * @return - список ещё не начавшихся аукционов
@@ -25,7 +23,6 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     /**
      * Ищет аукционы, созданные конкретным пользователем.
-     *
      * @param creatorId - идентификатор создателя
      * @return - список аукционов пользователя
      */
@@ -33,7 +30,6 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     /**
      * Ищет аукционы по статусу, у которых время начала ещё не наступило.
-     *
      * @param status - статус аукциона
      * @param now - текущее время
      * @return - список ещё не начавшихся аукционов
@@ -42,10 +38,17 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
 
     /**
      * Ищет аукционы по статусу, у которых время окончания уже наступило.
-     *
      * @param status - статус аукциона
      * @param now - текущее время
      * @return - список завершенных аукционов
      */
     List<Auction> findByStatusAndEndTimeBefore(String status, LocalDateTime now);
+
+    /**
+     *
+     * @param winnerId
+     * @param status
+     * @return
+     */
+    List<Auction> findByWinnerIdAndStatusOrderByEndTimeDesc(Long winnerId, String status);
 }

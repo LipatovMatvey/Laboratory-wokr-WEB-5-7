@@ -1,10 +1,8 @@
 $(document).ready(function() {
     checkAuth();
-    
     $('#logout-btn').on('click', function() {
         logout();
     });
-    
     loadFeaturedAuctions();
 });
 
@@ -105,7 +103,7 @@ function logout() {
  */
 function loadFeaturedAuctions() {
     $.ajax({
-        url: "/api/auctions/featured",
+        url: "/api/auctions/active",
         method: "GET",
         success: function(auctions) {
             renderFeaturedAuctions(auctions);
@@ -137,27 +135,59 @@ function renderFeaturedAuctions(auctions) {
         `);
         return;
     }
+    
     let html = '';
-    auctions.forEach(auction => {
+    auctions.slice(0, 6).forEach(auction => {
         const timeLeft = calculateTimeLeft(auction.endTime);
-        const timeClass = timeLeft.includes('час') ? 'text-danger' : 'text-warning';
+        const timeClass = getTimeClass(timeLeft);
+        const isNew = isAuctionNew(auction.createdAt);
+        const badge = isNew ? '<span class="badge bg-success me-1">Новый</span>' : '';
+        
         html += `
             <div class="col-md-6 col-lg-4 mb-4">
-                <div class="card auction-card">
-                    <img src="${auction.imageUrl || 'https://via.placeholder.com/300x200'}" 
-                         class="card-img-top" alt="${auction.title}" 
-                         style="height: 200px; object-fit: cover;">
-                    <div class="card-body">
-                        <h5 class="card-title">${auction.title}</h5>
-                        <p class="card-text">${auction.description || ''}</p>
-                        <p class="card-text">Текущая цена: <strong>${auction.currentPrice?.toLocaleString() || '0'} ₽</strong></p>
-                        <p class="card-text"><small class="${timeClass}">Заканчивается: ${timeLeft}</small></p>
-                        <a href="auction-detail.html?id=${auction.id}" class="btn btn-primary btn-sm">Подробнее</a>
+                <div class="card auction-card shadow-sm h-100">
+                    <div class="position-relative">
+                        <img src="${auction.imageUrl || '/uploads/auctions/NOFOTO.jpg'}" 
+                             class="card-img-top" alt="${auction.title}" 
+                             style="height: 200px; object-fit: cover;"
+                             onerror="this.onerror=null; this.src='/uploads/auctions/NOFOTO.jpg'">
+                        ${isNew ? `
+                            <div class="position-absolute top-0 start-0 m-2">
+                                <span class="badge bg-success">Новый</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">${badge}${auction.title}</h5>
+                        <p class="card-text flex-grow-1 text-muted small">
+                            ${auction.description ? (auction.description.length > 80 ? 
+                                auction.description.substring(0, 80) + '...' : auction.description) : 'Описание отсутствует'}
+                        </p>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold text-primary">${formatPrice(auction.currentPrice || auction.startPrice || 0)} ₽</span>
+                                <small class="text-muted">Шаг: ${formatPrice(auction.step || 0)} ₽</small>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-gem me-1"></i>Ставок: ${auction.bidsCount || 0}
+                                </small>
+                                <small class="${timeClass} fw-bold">
+                                    <i class="bi bi-clock me-1"></i>${timeLeft}
+                                </small>
+                            </div>
+                            <div class="d-grid">
+                                <a href="auction-detail.html?id=${auction.id}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-cash-stack me-1"></i>Сделать ставку
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     });
+    
     $container.html(html);
 }
 
@@ -176,4 +206,40 @@ function calculateTimeLeft(endTime) {
     if (days > 0) return `${days} дней`;
     if (hours > 0) return `${hours} часов`;
     return 'Менее часа';
+}
+
+/**
+ * Форматирует цену
+ * @param {number} price - Цена
+ * @returns {string} Отформатированная цена
+ */
+function formatPrice(price) {
+    return parseFloat(price).toLocaleString('ru-RU', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+/**
+ * Определяет CSS класс для времени в зависимости от срока
+ * @param {string} timeLeft - Оставшееся время
+ * @returns {string} CSS класс
+ */
+function getTimeClass(timeLeft) {
+    if (timeLeft.includes('Завершен')) return 'text-danger';
+    if (timeLeft.includes('час') || timeLeft.includes('час')) return 'text-danger';
+    if (timeLeft.includes('день')) return 'text-warning';
+    return 'text-success';
+}
+
+/**
+ * Проверяет, является ли аукцион новым (создан менее 1 дня назад)
+ * @param {string} createdAt - Дата создания аукциона в формате ISO
+ * @returns {boolean} true если аукцион новый
+ */
+function isAuctionNew(createdAt) {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffHours = (now - created) / (1000 * 60 * 60);
+    return diffHours < 24;
 }

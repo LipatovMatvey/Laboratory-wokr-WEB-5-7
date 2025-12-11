@@ -1,10 +1,8 @@
 $(document).ready(function() {
     checkAuth();
-    
     $('#logout-btn').on('click', function() {
         logout();
     });
-    
     loadNews();
 });
 

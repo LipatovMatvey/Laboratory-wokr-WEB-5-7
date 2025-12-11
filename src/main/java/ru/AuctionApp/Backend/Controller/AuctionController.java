@@ -39,7 +39,6 @@ public class AuctionController {
 
     /**
      * Создает новый аукцион.
-     *
      * @param title - название лота
      * @param description - подробное описание лота
      * @param startPrice - начальная цена лота
@@ -69,14 +68,11 @@ public class AuctionController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             AuctionDTO auction = auctionService.createAuction(
                     title, description, startPrice, step,
                     startTime, endTime, category, image, userId
             );
-
             return ResponseEntity.ok(auction);
-
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
@@ -85,7 +81,6 @@ public class AuctionController {
 
     /**
      * Получает список активных аукционов.
-     *
      * @return - список DTO активных аукционов
      */
     @GetMapping("/active")
@@ -95,7 +90,6 @@ public class AuctionController {
 
     /**
      * Получает информацию об аукционе по его ID.
-     *
      * @param id - уникальный идентификатор аукциона
      * @return - DTO аукциона или сообщение об ошибке, если аукцион не найден
      */
@@ -112,7 +106,6 @@ public class AuctionController {
 
     /**
      * Получает список аукционов, созданных текущим пользователем.
-     *
      * @param session - текущая HTTP-сессия для определения пользователя
      * @return - список DTO аукционов пользователя или сообщение об ошибке
      */
@@ -124,13 +117,20 @@ public class AuctionController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             List<AuctionDTO> auctions = auctionService.getUserAuctions(userId);
             return ResponseEntity.ok(auctions);
-
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    /**
+     * Получает аукционы для главной страницы
+     * @return - список DTO аукционов для главной
+     */
+    @GetMapping("/featured")
+    public List<AuctionDTO> getFeaturedAuctions() {
+        return auctionService.getFeaturedAuctions();
     }
 }

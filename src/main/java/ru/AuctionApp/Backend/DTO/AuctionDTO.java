@@ -82,7 +82,28 @@ public class AuctionDTO {
     private Long creatorId;
 
     /**
-     *
+     * Конструктор по умолчанию
+     */
+    public AuctionDTO(){
+        this.id = null;
+        this.title = null;
+        this.description = null;
+        this.startPrice = null;
+        this.currentPrice = null;;
+        this.step = null;
+        this.startTime = null;
+        this.endTime = null;
+        this.imageUrl = null;
+        this.category = null;
+        this.status = null;
+        this.bidsCount = null;
+        this.createdAt = null;
+        this.creatorId = null;
+        this.creatorName = null;
+    }
+
+    /**
+     * Конструктор с параметром
      * @param auction
      */
     public AuctionDTO(Auction auction) {
