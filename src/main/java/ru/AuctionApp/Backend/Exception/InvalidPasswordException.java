@@ -2,8 +2,8 @@ package ru.AuctionApp.Backend.Exception;
 
 public class InvalidPasswordException extends RuntimeException{
     /**
-     *
-     * @param message
+     * Конструктор исключения с сообщением об ошибке
+     * @param message сообщение об ошибке
      */
     public InvalidPasswordException(String message) { super(message); }
 }

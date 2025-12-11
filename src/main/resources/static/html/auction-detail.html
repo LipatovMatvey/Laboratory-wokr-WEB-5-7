@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <title>Детали аукциона</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="../library/jquery-3.7.1.min.js" defer></script>
+        <script src="../library/bootstrap.bundle.min.js" defer></script>
+        <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+        <link href="../style/main.css" rel="stylesheet" type="text/css"/>
+        <script src="../js/auction-detail.js" defer></script>
+        <link href="../style/auction-detail.css" rel="stylesheet" type="text/css"/>
+        <link rel="shortcut icon" href="#"/>
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="main.html">Аукцион</a>
+                <div class="navbar-nav ms-auto">
+                    <span id="server-time" class="navbar-text me-3"></span>
+                    <a href="auctions.html" class="nav-link">К аукционам</a>
+                    <a href="user-cabinet.html" class="nav-link">Личный кабинет</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mt-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <img id="auction-image" class="card-img-top" 
+                             style="max-height: 400px; object-fit: contain; background-color: #f8f9fa;"
+                             alt="Изображение лота">
+                        <div class="card-body">
+                            <h2 id="auction-title" class="card-title mb-3"></h2>
+                            <p id="auction-description" class="card-text text-muted mb-4"></p>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-subtitle mb-2 text-muted">Текущая цена</h6>
+                                            <h3 id="current-price" class="text-primary mb-0"></h3>
+                                            <small class="text-muted">Начальная цена: <span id="start-price"></span></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-subtitle mb-2 text-muted">Информация</h6>
+                                            <p class="mb-1"><small>Шаг ставки: <strong id="step"></strong></small></p>
+                                            <p class="mb-1"><small>Ставок: <strong id="bids-count">0</strong></small></p>
+                                            <p class="mb-0"><small>Создатель: <strong id="creator-name"></strong></small></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Время аукциона</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Начало:</strong> <span id="start-time"></span></p>
+                                            <p class="mb-0"><strong>Статус:</strong> <span id="auction-status" class="badge"></span></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-1"><strong>Окончание:</strong> <span id="end-time"></span></p>
+                                            <p class="mb-0"><strong>Осталось:</strong> <span id="time-left" class="fw-bold"></span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">История ставок</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="bids-history" class="bids-list">
+                                <p class="text-muted text-center py-3">Ставок пока нет</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Сделать ставку</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="bid-form-container">
+                                <p class="text-muted" id="login-required-message" style="display: none;">
+                                    Для участия в торгах необходимо <a href="auth.html">войти в систему</a>
+                                </p>
+
+                                <div id="bid-form" style="display: none;">
+                                    <div class="mb-3">
+                                        <label class="form-label">Минимальная ставка</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="bid-amount" 
+                                                   step="10" min="0" placeholder="Введите сумму">
+                                            <span class="input-group-text">₽</span>
+                                        </div>
+                                        <small class="text-muted">Шаг ставки: <span id="min-step"></span> ₽</small>
+                                        <small class="text-muted d-block mt-1">Ваш баланс: <strong id="user-balance">0</strong> ₽</small>
+                                    </div>
+
+                                    <div class="d-grid">
+                                        <button type="button" id="place-bid-btn" class="btn btn-primary">
+                                            <i class="bi bi-cash-stack me-2"></i>Сделать ставку
+                                        </button>
+                                    </div>
+
+                                    <div class="alert alert-info mt-3 small" id="bid-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        После ставки сумма будет заблокирована на вашем балансе.
+                                        Если вашу ставку перебьют, деньги вернутся на баланс.
+                                    </div>
+                                </div>
+
+                                <div id="auction-not-started" class="alert alert-warning" style="display: none;">
+                                    <i class="bi bi-clock me-2"></i>
+                                    Аукцион еще не начался. Ставки можно делать после <span id="start-time-text"></span>
+                                </div>
+
+                                <div id="auction-ended" class="alert alert-danger" style="display: none;">
+                                    <i class="bi bi-x-circle me-2"></i>
+                                    Аукцион завершен
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Информация</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled small">
+                                <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Сумма ставки блокируется на балансе</li>
+                                <li class="mb-2"><i class="bi bi-arrow-counterclockwise text-info me-2"></i>Деньги возвращаются, если ставку перебили</li>
+                                <li class="mb-2"><i class="bi bi-trophy text-warning me-2"></i>Победитель оплачивает только выигранную сумму</li>
+                                <li><i class="bi bi-shield-check text-primary me-2"></i>Все ставки защищены системой</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="confirmBidModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Подтверждение ставки</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Вы уверены, что хотите сделать ставку в размере <strong id="confirm-bid-amount">0</strong> ₽?</p>
+                        <p class="text-muted small">Сумма будет заблокирована на вашем балансе до окончания аукциона.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" id="confirm-bid-btn">Подтвердить ставку</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="bid-success-toast" class="position-fixed top-0 end-0 p-3" style="z-index: 9999; display: none;">
+            <div class="toast" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <strong class="me-auto">Успех!</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body" id="bid-success-message"></div>
+            </div>
+        </div>
+
+        <div id="bid-error-toast" class="position-fixed top-0 end-0 p-3" style="z-index: 9999; display: none;">
+            <div class="toast" role="alert">
+                <div class="toast-header bg-danger text-white">
+                    <strong class="me-auto">Ошибка</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body" id="bid-error-message"></div>
+            </div>
+        </div>
+    </body>
+</html>

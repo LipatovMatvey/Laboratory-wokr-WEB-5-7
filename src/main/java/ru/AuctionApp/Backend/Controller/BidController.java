@@ -30,10 +30,8 @@ public class BidController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Необходима авторизация"));
             }
-
             Long auctionId = Long.valueOf(bidData.get("auctionId").toString());
             Double amount = Double.valueOf(bidData.get("amount").toString());
-
             Map<String, Object> result = bidService.placeBid(userId, auctionId, amount);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -69,11 +67,8 @@ public class BidController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Необходима авторизация"));
             }
-
-            // Проверяем права администратора (нужно добавить проверку роли)
             bidService.finishAuction(auctionId);
             bidService.refundAllBidsExceptWinner(auctionId);
-
             return ResponseEntity.ok(Map.of("success", true, "message", "Аукцион завершен"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
