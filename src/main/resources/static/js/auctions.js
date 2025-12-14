@@ -1,4 +1,10 @@
 $(document).ready(function() {
+    // Проверяем авторизацию при загрузке страницы
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.authenticated) {
+        updateNavigation({ authenticated: false });
+    }
+
     checkAuth();
     $('#logout-btn').on('click', function() {
         logout();
@@ -58,10 +64,25 @@ function updateNavigation(response) {
     if (response.authenticated) {
         $('#user-info').text(response.fullName || 'Пользователь');
         $('#user-role').text(getRoleDisplayName(response.role));
+        $('#user-visits').text("Количество посещений " + `${response.visits || 0}`);
         $('#login-item').addClass('hidden');
         $('#logout-item').removeClass('hidden');
         $('#user-cabinet-item').removeClass('hidden');
-        localStorage.setItem('user', JSON.stringify(response));
+
+        // Сохраняем данные пользователя
+        const userData = {
+            authenticated: true,
+            id: response.id,
+            fullName: response.fullName,
+            email: response.email,
+            visits: response.visits,
+            birthdate: response.birthdate,
+            role: response.role,
+            avatarUrl: response.avatarUrl,
+            balance: response.balance || 0
+        };
+        localStorage.setItem('user', JSON.stringify(userData));
+
         if (response.role === 'admin') {
             $('#create-auction-btn').removeClass('hidden');
         } else {
@@ -70,11 +91,14 @@ function updateNavigation(response) {
     } else {
         $('#user-info').text('');
         $('#user-role').text('Гость');
+        $('#user-visits').html('');
         $('#login-item').removeClass('hidden');
         $('#logout-item').addClass('hidden');
         $('#user-cabinet-item').addClass('hidden');
         $('#create-auction-btn').addClass('hidden');
-        localStorage.removeItem('user');
+
+        // Сохраняем данные гостя
+        localStorage.setItem('user', JSON.stringify({ authenticated: false }));
     }
 }
 
@@ -171,8 +195,8 @@ function renderAuctions(auctions) {
             <div class="col-md-6 col-lg-4 mb-4" data-auction-id="${auction.id}" data-is-new="${isNew}" data-time-left="${timeLeft}">
                 <div class="card h-100 auction-card shadow-sm">
                     <div class="position-relative">
-                        <img src="${auction.imageUrl || '/uploads/auctions/NOFOTO.jpg'}" 
-                            class="card-img-top" alt="${auction.title}" 
+                        <img src="${auction.imageUrl || '/uploads/auctions/NOFOTO.jpg'}"
+                            class="card-img-top" alt="${auction.title}"
                             style="height: 200px; object-fit: cover;"
                             onerror="this.onerror=null; this.src='/uploads/auctions/NOFOTO.jpg'">
                         ${isNew || timeClass.includes('danger') ? `
@@ -202,9 +226,7 @@ function renderAuctions(auctions) {
                                 </small>
                             </div>
                             <div class="d-grid">
-                                <a href="auction-detail.html?id=${auction.id}" class="btn btn-primary">
-                                    <i class="bi bi-cash-stack me-1"></i>Сделать ставку
-                                </a>
+                                ${getAuctionButton(auction)}
                             </div>
                         </div>
                     </div>
@@ -223,6 +245,43 @@ function renderAuctions(auctions) {
         `;
     });
     $container.html(html);
+}
+
+/**
+ * Возвращает соответствующую кнопку для аукциона в зависимости от авторизации
+ * @param {Object} auction - Объект аукциона
+ * @returns {string} HTML кнопки
+ */
+function getAuctionButton(auction) {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    // Проверяем, завершен ли аукцион
+    const endTime = new Date(auction.endTime);
+    const now = new Date();
+    const isEnded = now > endTime || auction.status === 'FINISHED' || auction.status === 'CANCELLED';
+
+    if (isEnded) {
+        return `
+            <a href="auction-detail.html?id=${auction.id}" class="btn btn-secondary">
+                <i class="bi bi-eye me-1"></i>Посмотреть
+            </a>
+        `;
+    }
+
+    // Проверяем авторизацию
+    if (user.authenticated) {
+        return `
+            <a href="auction-detail.html?id=${auction.id}" class="btn btn-primary">
+                <i class="bi bi-cash-stack me-1"></i>Сделать ставку
+            </a>
+        `;
+    } else {
+        return `
+            <a href="auth.html" class="btn btn-primary">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Войти для ставки
+            </a>
+        `;
+    }
 }
 
 /**
@@ -341,11 +400,11 @@ function isAuctionNew(createdAt) {
  * @param {string} type - Тип уведомления (success, danger, warning, info)
  */
 function showNotification(message, type = 'info') {
-    const alertClass = type === 'success' ? 'alert-success' : 
-                      type === 'danger' ? 'alert-danger' : 
+    const alertClass = type === 'success' ? 'alert-success' :
+                      type === 'danger' ? 'alert-danger' :
                       type === 'warning' ? 'alert-warning' : 'alert-info';
     const $notification = $(`
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" 
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert"
              style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

@@ -49,6 +49,7 @@ function updateNavigation(response) {
     if (response.authenticated) {
         $('#user-info').text(response.fullName || 'Пользователь');
         $('#user-role').text(getRoleDisplayName(response.role));
+        $('#user-visits').text("Количество посещений " + `${response.visits || 0}`);
         $('#login-item').addClass('hidden');
         $('#logout-item').removeClass('hidden');
         $('#user-cabinet-item').removeClass('hidden');
@@ -56,6 +57,7 @@ function updateNavigation(response) {
     } else {
         $('#user-info').text('');
         $('#user-role').text('Гость');
+        $('#user-visits').html('');
         $('#login-item').removeClass('hidden');
         $('#logout-item').addClass('hidden');
         $('#user-cabinet-item').addClass('hidden');

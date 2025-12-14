@@ -6,7 +6,7 @@ $(document).ready(function() {
         loadBidsHistory(auctionId);
         startTimeUpdate();
     } else {
-        showError('Аукцион не найден');
+        showSimpleError('Аукцион не найден');
         setTimeout(() => window.location.href = 'auctions.html', 2000);
     }
 });
@@ -32,6 +32,7 @@ function checkAuth() {
         userData = JSON.parse(userStr);
         if (userData.authenticated) {
             $('#login-required-message').hide();
+            loadUserBalance();
             if (currentAuction) {
                 setupBidForm(currentAuction);
             }
@@ -58,7 +59,7 @@ function loadAuctionDetails(auctionId) {
             setupBidForm(auction);
         },
         error: function(xhr) {
-            showError('Не удалось загрузить данные аукциона');
+            showSimpleError('Не удалось загрузить данные аукциона');
         }
     });
 }
@@ -149,19 +150,19 @@ function setupBidForm(auction) {
  */
 function placeBid(auctionId) {
     const bidAmount = parseFloat($('#bid-amount').val());
-    const minBid = (currentAuction.currentPrice || currentAuction.startPrice) + currentAuction.step;
+    const minBid = (currentAuction.currentPrice || currentAuction.startPrice) + currentAuction.step;    
     if (!bidAmount || bidAmount < minBid) {
-        showError(`Минимальная ставка: ${formatPrice(minBid)} ₽`);
+        showSimpleError(`Минимальная ставка: ${formatPrice(minBid)} ₽`);
         return;
-    }
-    if (!userData || userData.balance === undefined) {
-        showError('Не удалось проверить баланс. Пожалуйста, войдите снова.');
+    }    
+    if (!userData || !userData.authenticated) {
+        showSimpleError('Для размещения ставки необходимо войти в систему');
         return;
-    }
+    }    
     if (userData.balance < bidAmount) {
-        showError(`Недостаточно средств на балансе. Ваш баланс: ${formatPrice(userData.balance)} ₽`);
+        showSimpleError(`Недостаточно средств! Ваш баланс: ${formatPrice(userData.balance)} ₽, требуется: ${formatPrice(bidAmount)} ₽`);
         return;
-    }
+    }    
     $('#confirm-bid-amount').text(formatPrice(bidAmount));
     const modal = new bootstrap.Modal(document.getElementById('confirmBidModal'));
     modal.show();
@@ -182,14 +183,14 @@ function confirmPlaceBid(auctionId) {
         }),
         success: function(response) {
             $('#confirmBidModal').modal('hide');
-            showBidSuccess('Ставка успешно размещена!');
+            showSimpleSuccess('Ставка успешно размещена!');
             loadAuctionDetails(auctionId);
             loadBidsHistory(auctionId);
             loadUserBalance();
         },
         error: function(xhr) {
             const error = xhr.responseJSON?.error || 'Ошибка при размещении ставки';
-            showError(error);
+            showSimpleError(error);
         }
     });
 }
@@ -244,8 +245,11 @@ function renderBidsHistory(bids) {
 /**
  * Загружает баланс пользователя
  */
-function loadUserBalance() {
-    if (!userData || !userData.authenticated) return;
+function loadUserBalance(callback) {
+    if (!userData || !userData.authenticated) {
+        if (callback) callback();
+        return;
+    }
     $.ajax({
         url: "/api/balance",
         method: "GET",
@@ -253,8 +257,13 @@ function loadUserBalance() {
             userData.balance = response.balance;
             $('#user-balance').text(formatPrice(response.balance));
             localStorage.setItem('user', JSON.stringify(userData));
+            if (callback) callback();
         },
         error: function() {
+            if (userData.balance !== undefined) {
+                $('#user-balance').text(formatPrice(userData.balance));
+            }
+            if (callback) callback();
         }
     });
 }
@@ -316,25 +325,39 @@ function formatPrice(price) {
 }
 
 /**
- * Показывает уведомление об успехе
+ * Показывает простое уведомление об успехе
  */
-function showBidSuccess(message) {
-    $('#bid-success-message').text(message);
-    const toast = new bootstrap.Toast(document.getElementById('bid-success-toast'));
-    $('#bid-success-toast').show();
-    toast.show();
-    setTimeout(() => toast.hide(), 3000);
+function showSimpleSuccess(message) {
+    $('.simple-notification').remove();    
+    const $notification = $(`
+        <div class="simple-notification alert alert-success alert-dismissible fade show" 
+             style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            <strong>Успех!</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);    
+    $('body').append($notification);    
+    setTimeout(() => {
+        $notification.alert('close');
+    }, 3000);
 }
 
 /**
- * Показывает уведомление об ошибке
+ * Показывает простое уведомление об ошибке
  */
-function showError(message) {
-    $('#bid-error-message').text(message);
-    const toast = new bootstrap.Toast(document.getElementById('bid-error-toast'));
-    $('#bid-error-toast').show();
-    toast.show();
-    setTimeout(() => toast.hide(), 5000);
+function showSimpleError(message) {
+    $('.simple-notification').remove();    
+    const $notification = $(`
+        <div class="simple-notification alert alert-danger alert-dismissible fade show" 
+             style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            <strong>Ошибка!</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    $('body').append($notification);    
+    setTimeout(() => {
+        $notification.alert('close');
+    }, 5000);
 }
 
 /**

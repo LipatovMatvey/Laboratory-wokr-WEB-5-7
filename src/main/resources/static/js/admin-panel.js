@@ -75,12 +75,6 @@ function setupEventHandlers() {
             $button.html('👁️');
         }
     });
-//    $(document).on('click', '.toggle-ban-btn', function(e) {
-//        e.stopPropagation();
-//        const userId = $(this).data('user-id');
-//        const banned = $(this).data('banned');
-//        toggleUserBan(userId, banned, $(this).closest('tr'));
-//    });
 }
 
 /**
