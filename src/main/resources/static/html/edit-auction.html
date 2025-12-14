@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <title>Редактирование аукциона</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="../library/bootstrap.bundle.min.js" defer></script>
+    <script src="../library/jquery-3.7.1.min.js" defer></script>
+    <link href="../library/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+    <link href="../style/main.css" rel="stylesheet" type="text/css"/>
+    <link href="../style/edit-auction.css" rel="stylesheet" type="text/css"/>
+    <link rel = "shortcut icon" href="#"/>
+    <script src="../js/edit-auction.js" defer></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <span class="navbar-brand">Аукцион</span>
+            <div class="navbar-nav">
+                <a class="nav-link" href="auctions.html">← Назад к аукционам</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Редактирование аукциона</h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="loading-message" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Загрузка данных аукциона...</p>
+                        </div>
+                        
+                        <form id="edit-auction-form" class="hidden">
+                            <div class="readonly-info mb-4">
+                                <h6 class="text-primary mb-3">Информация об аукционе</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Создатель:</strong> <span id="creator-name">Загрузка...</span></p>
+                                        <p><strong>Время начала:</strong> <span id="start-time">Загрузка...</span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Время окончания:</strong> <span id="end-time">Загрузка...</span></p>
+                                        <p><strong>Количество ставок:</strong> <span id="bids-count">0</span></p>
+                                    </div>
+                                </div>
+                                <p><strong>Текущая цена:</strong> <span id="current-price" class="text-success fw-bold">0 ₽</span></p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Название аукциона *</label>
+                                <input type="text" class="form-control" id="title" required minlength="5" maxlength="200">
+                                <div class="invalid-feedback">Название должно содержать минимум 5 символов</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Описание</label>
+                                <textarea class="form-control" id="description" rows="4" maxlength="2000"></textarea>
+                                <div class="form-text">Максимум 2000 символов</div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="startPrice" class="form-label">Начальная цена (₽) *</label>
+                                    <input type="number" class="form-control" id="startPrice" min="0" step="0.01" required>
+                                    <div class="invalid-feedback">Начальная цена должна быть больше 0</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="step" class="form-label">Шаг ставки (₽) *</label>
+                                    <input type="number" class="form-control" id="step" min="10" step="10" required>
+                                    <div class="invalid-feedback">Минимальный шаг ставки - 10 рублей</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Категория</label>
+                                <select class="form-select" id="category">
+                                    <option value="electronics">Электроника</option>
+                                    <option value="clothing">Одежда</option>
+                                    <option value="books">Книги</option>
+                                    <option value="collectibles">Коллекционные</option>
+                                    <option value="art">Искусство</option>
+                                    <option value="other">Другое</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3 hidden" id="status-section">
+                                <label for="status" class="form-label">Статус</label>
+                                <select class="form-select" id="status">
+                                    <option value="ACTIVE">Активен</option>
+                                    <option value="FINISHED">Завершен</option>
+                                </select>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <small>
+                                    <i class="bi bi-info-circle"></i> 
+                                    Время начала и окончания нельзя изменить после создания аукциона.
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" id="cancel-btn">
+                                    <i class="bi bi-arrow-left me-1"></i>Отмена
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="save-btn">
+                                    <i class="bi bi-check-circle me-1"></i>Сохранить изменения
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirm-message"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="confirm-action-btn">Подтвердить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="errorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Ошибка</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="error-message"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

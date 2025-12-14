@@ -14,19 +14,19 @@ import java.util.*;
 public class BidService {
 
     /**
-     *
+     * Репозиторий для работы со ставками
      */
     @Autowired
     private BidRepository bidRepository;
 
     /**
-     *
+     * Репозиторий для работы с аукционами
      */
     @Autowired
     private AuctionRepository auctionRepository;
 
     /**
-     *
+     * Репозиторий для работы с пользователями
      */
     @Autowired
     private UsersRepository usersRepository;

@@ -38,14 +38,13 @@ public class AuctionService {
     private UsersRepository usersRepository;
 
     /**
-     *
+     * Репозиторий для работы со ставками
      */
     @Autowired
     private BidRepository bidRepository;
 
     /**
      * Создает новый аукцион.
-     *
      * @param title - название лота
      * @param description - описание лота
      * @param startPrice - начальная цена
@@ -125,7 +124,6 @@ public class AuctionService {
 
     /**
      * Получает информацию об аукционе по его ID.
-     *
      * @param id - уникальный идентификатор аукциона
      * @return - DTO аукциона или сообщение об ошибке, если аукцион не найден
      */
@@ -163,19 +161,12 @@ public class AuctionService {
      */
     public List<AuctionDTO> getCompletedAuctions() {
         LocalDateTime now = LocalDateTime.now();
-
-        // Ищем активные аукционы, у которых время окончания прошло
         List<Auction> expiredAuctions = auctionRepository.findByStatusAndEndTimeBefore("ACTIVE", now);
-
-        // Обновляем статус у завершенных аукционов
         for (Auction auction : expiredAuctions) {
             updateAuctionStatus(auction);
         }
-
-        // Теперь ищем аукционы с завершенными статусами
         List<String> completedStatuses = Arrays.asList("FINISHED", "EXPIRED", "CANCELLED");
         List<Auction> completedAuctions = auctionRepository.findByStatusIn(completedStatuses);
-
         return completedAuctions.stream()
                 .map(AuctionDTO::new)
                 .sorted((a1, a2) -> a2.getEndTime().compareTo(a1.getEndTime()))
@@ -187,24 +178,18 @@ public class AuctionService {
      * @param auction - аукцион для обновления
      */
     private void updateAuctionStatus(Auction auction) {
-        // Получаем все ставки для этого аукциона, отсортированные по убыванию суммы
         List<Bid> bids = bidRepository.findByAuctionIdOrderByAmountDesc(auction.getId());
-
         if (bids.isEmpty()) {
-            // Нет ставок - аукцион истек
             auction.setStatus("EXPIRED");
         } else {
-            // Есть ставки - определяем победителя (последняя лидирующая ставка)
             Bid winningBid = bids.stream()
                     .filter(Bid::isWinning)
                     .findFirst()
-                    .orElse(bids.get(0)); // Если нет winning=true, берем самую большую
-
+                    .orElse(bids.get(0));
             auction.setWinner(winningBid.getUser());
             auction.setCurrentPrice(winningBid.getAmount());
             auction.setStatus("FINISHED");
         }
-
         auctionRepository.save(auction);
     }
 
@@ -215,11 +200,9 @@ public class AuctionService {
     public int checkAndUpdateExpiredAuctions() {
         LocalDateTime now = LocalDateTime.now();
         List<Auction> expiredAuctions = auctionRepository.findByStatusAndEndTimeBefore("ACTIVE", now);
-
         for (Auction auction : expiredAuctions) {
             updateAuctionStatus(auction);
         }
-
         return expiredAuctions.size();
     }
 }

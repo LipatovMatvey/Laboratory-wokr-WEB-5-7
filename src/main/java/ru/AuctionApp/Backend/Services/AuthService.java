@@ -33,14 +33,13 @@ import java.util.UUID;
 public class AuthService {
 
     /**
-     *
+     * Репозиторий для работы с пользователями
      */
     @Autowired
     private UsersRepository userRepository;
 
     /**
      * Регистрирует нового пользователя.
-     *
      * @param email - почта пользователя
      * @param fullName - ФИО пользователя
      * @param birthDate - дата рождения пользователя
@@ -113,7 +112,6 @@ public class AuthService {
 
     /**
      * Авторизует пользователя по email и паролю.
-     *
      * @param email - введенная почта
      * @param password - введенный пароль
      * @return - UserDto с данными авторизованного пользователя
@@ -136,7 +134,6 @@ public class AuthService {
 
     /**
      * Определяет текущего авторизованного пользователя по userId из сессии.
-     *
      * @param session - текущая HTTP - сессия
      * @return - UserDto:
      *          - авторизованный пользователь, если userId существует и валиден;
@@ -156,7 +153,6 @@ public class AuthService {
 
     /**
      * Пополняет баланс пользователя на указанную сумму.
-     *
      * @param userId - ID пользователя
      * @param amount - сумма для пополнения (должна быть положительной)
      * @return - обновленный баланс пользователя
@@ -178,7 +174,6 @@ public class AuthService {
 
     /**
      * Пополняет баланс текущего пользователя на фиксированную сумму 10000.
-     *
      * @param session - текущая HTTP-сессия
      * @return - обновленный баланс пользователя
      */
@@ -192,7 +187,6 @@ public class AuthService {
 
     /**
      * Получает баланс текущего пользователя.
-     *
      * @param session - текущая HTTP-сессия
      * @return - баланс пользователя
      */

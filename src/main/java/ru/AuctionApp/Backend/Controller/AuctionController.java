@@ -9,6 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.AuctionApp.Backend.DTO.AuctionDTO;
+import ru.AuctionApp.Backend.Entity.Auction;
+import ru.AuctionApp.Backend.Entity.Bid;
+import ru.AuctionApp.Backend.Entity.User;
+import ru.AuctionApp.Backend.Repositories.AuctionRepository;
+import ru.AuctionApp.Backend.Repositories.BidRepository;
+import ru.AuctionApp.Backend.Repositories.UsersRepository;
 import ru.AuctionApp.Backend.Services.AuctionService;
 
 import java.time.LocalDateTime;
@@ -28,9 +34,27 @@ public class AuctionController {
     private AuctionService auctionService;
 
     /**
-     *
-     * @param ex
-     * @return
+     * Репозиторий для работы с аукционами
+     */
+    @Autowired
+    private AuctionRepository auctionRepository;
+
+    /**
+     * Репозиторий для работы с пользователями
+     */
+    @Autowired
+    private UsersRepository usersRepository;
+
+    /**
+     * Репозиторий для работы со ставками
+     */
+    @Autowired
+    private BidRepository bidRepository;
+
+    /**
+     * Обрабатывает исключения типа RuntimeException, возникающие в контроллере.
+     * @param ex - исключение, которое было выброшено
+     * @return - карта с сообщением об ошибке
      */
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -157,15 +181,10 @@ public class AuctionController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
-            // Получаем все завершенные аукционы
             List<AuctionDTO> allCompletedAuctions = auctionService.getCompletedAuctions();
-
-            // Фильтруем только аукционы текущего пользователя
             List<AuctionDTO> userCompletedAuctions = allCompletedAuctions.stream()
                     .filter(auction -> auction.getCreatorId() != null && auction.getCreatorId().equals(userId))
                     .collect(Collectors.toList());
-
             return ResponseEntity.ok(userCompletedAuctions);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -188,6 +207,124 @@ public class AuctionController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Обновляет аукцион (доступно только администраторам)
+     * @param id - ID аукциона
+     * @param updates - данные для обновления
+     * @param session - HTTP сессия
+     * @return - обновленный аукцион
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateAuction(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> updates,
+            HttpSession session
+    ) {
+        try {
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Не авторизован"));
+            }
+            Auction auction = auctionRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Аукцион не найден"));
+            User currentUser = usersRepository.findById(userId).orElse(null);
+            boolean isAdmin = currentUser != null && "admin".equals(currentUser.getRole());
+            if (!isAdmin) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Только администраторы могут редактировать аукционы"));
+            }
+            boolean wasActive = "ACTIVE".equals(auction.getStatus());
+            boolean isFinishing = updates.containsKey("status") && "FINISHED".equals(updates.get("status"));
+            if (updates.containsKey("title")) {
+                auction.setTitle((String) updates.get("title"));
+            }
+            if (updates.containsKey("description")) {
+                auction.setDescription((String) updates.get("description"));
+            }
+            if (updates.containsKey("startPrice")) {
+                auction.setStartPrice(Double.parseDouble(updates.get("startPrice").toString()));
+                if (auction.getCurrentPrice() == null || auction.getCurrentPrice() < auction.getStartPrice()) {
+                    auction.setCurrentPrice(auction.getStartPrice());
+                }
+            }
+            if (updates.containsKey("step")) {
+                auction.setStep(Double.parseDouble(updates.get("step").toString()));
+            }
+            if (updates.containsKey("category")) {
+                auction.setCategory((String) updates.get("category"));
+            }
+            if (updates.containsKey("status")) {
+                String newStatus = (String) updates.get("status");
+                auction.setStatus(newStatus);
+                if (wasActive && "FINISHED".equals(newStatus)) {
+                    determineWinner(auction);
+                }
+            }
+            auction.setUpdatedAt(LocalDateTime.now());
+            Auction updated = auctionRepository.save(auction);
+            if (wasActive && isFinishing) {
+                refundLosingBidders(auction);
+            }
+            return ResponseEntity.ok(new AuctionDTO(updated));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Определяет победителя аукциона при ручном завершении
+     */
+    private void determineWinner(Auction auction) {
+        try {
+            List<Bid> bids = bidRepository.findByAuctionIdOrderByAmountDesc(auction.getId());
+            if (bids != null && !bids.isEmpty()) {
+                Bid winningBid = bids.stream()
+                        .filter(Bid::isWinning)
+                        .findFirst()
+                        .orElse(bids.get(0));
+                auction.setWinner(winningBid.getUser());
+                auction.setCurrentPrice(winningBid.getAmount());
+                winningBid.setWinning(true);
+                bidRepository.save(winningBid);
+                for (Bid bid : bids) {
+                    if (!bid.getId().equals(winningBid.getId())) {
+                        bid.setWinning(false);
+                        bidRepository.save(bid);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Возвращает деньги проигравшим участникам
+     */
+    private void refundLosingBidders(Auction auction) {
+        try {
+            List<Bid> bids = bidRepository.findByAuctionIdOrderByAmountDesc(auction.getId());
+            if (bids != null && !bids.isEmpty()) {
+                Bid winningBid = bids.stream()
+                        .filter(Bid::isWinning)
+                        .findFirst()
+                        .orElse(null);
+                for (Bid bid : bids) {
+                    if (winningBid == null || !bid.getId().equals(winningBid.getId())) {
+                        User user = bid.getUser();
+                        user.setBalance(user.getBalance() + bid.getAmount());
+                        usersRepository.save(user);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

@@ -20,11 +20,14 @@ import java.util.*;
 @RequestMapping("/api/users")
 public class UserController {
     /**
-     *
+     * Репозиторий для работы с пользователями
      */
     @Autowired
     private UsersRepository usersRepository;
 
+    /**
+     * Сервис для работы со ставками
+     */
     @Autowired
     private BidService bidService;
 

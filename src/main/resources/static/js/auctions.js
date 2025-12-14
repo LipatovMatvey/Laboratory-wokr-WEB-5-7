@@ -201,11 +201,29 @@ function renderAuctions(auctions) {
         `);
         return;
     }
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isAdmin = user.authenticated && user.role === 'admin';
+    const now = new Date();
     let html = '';
     auctions.forEach(auction => {
         const timeLeft = calculateTimeLeft(auction.endTime);
         const timeClass = getTimeClass(timeLeft);
         const isNew = isAuctionNew(auction.createdAt);
+        const endTime = new Date(auction.endTime);
+        const isEnded = now > endTime || auction.status === 'FINISHED' || auction.status === 'CANCELLED';
+        const adminButtons = isAdmin && !isEnded ? `
+            <div class="btn-group btn-group-sm w-100 mt-2" role="group">
+                <button type="button" class="btn btn-outline-warning edit-auction-btn"
+                        data-auction-id="${auction.id}">
+                    <i class="bi bi-pencil me-1"></i>Редактировать
+                </button>
+                <button type="button" class="btn btn-outline-success finish-auction-btn"
+                        data-auction-id="${auction.id}" data-auction-title="${auction.title}">
+                    <i class="bi bi-check-circle me-1"></i>Завершить
+                </button>
+            </div>
+        ` : '';
+
         const badge = isNew ? '<span class="badge bg-success me-2"><i class="bi bi-star-fill me-1"></i>Новый</span>' : '';
         const creatorBadge = auction.creatorName ? `<span class="badge bg-secondary me-2"><i class="bi bi-person me-1"></i>${auction.creatorName}</span>` : '';
         html += `
@@ -219,6 +237,13 @@ function renderAuctions(auctions) {
                         ${isNew ? `
                             <div class="position-absolute top-0 start-0 m-2">
                                 <span class="badge bg-success">Новый</span>
+                            </div>
+                        ` : ''}
+                        ${isAdmin ? `
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge ${auction.status === 'ACTIVE' ? 'bg-success' : 'bg-warning'}">
+                                    ${auction.status === 'ACTIVE' ? 'Активен' : auction.status}
+                                </span>
                             </div>
                         ` : ''}
                     </div>
@@ -244,6 +269,7 @@ function renderAuctions(auctions) {
                             <div class="d-grid">
                                 ${getAuctionButton(auction)}
                             </div>
+                            ${adminButtons}
                         </div>
                     </div>
                     <div class="card-footer bg-transparent border-top-0 pt-0">
@@ -261,6 +287,56 @@ function renderAuctions(auctions) {
         `;
     });
     $container.html(html);
+    if (isAdmin) {
+        setupAdminButtons();
+    }
+}
+
+/**
+ * Настраивает обработчики для кнопок администрирования
+ */
+function setupAdminButtons() {
+    $('.edit-auction-btn').on('click', function(e) {
+        e.stopPropagation();
+        const auctionId = $(this).data('auction-id');
+        editAuction(auctionId);
+    });
+    
+    $('.finish-auction-btn').on('click', function(e) {
+        e.stopPropagation();
+        const auctionId = $(this).data('auction-id');
+        const auctionTitle = $(this).data('auction-title');
+        finishAuction(auctionId, auctionTitle);
+    });
+}
+
+/**
+ * Завершает аукцион администратором
+ */
+function finishAuction(auctionId, auctionTitle) {
+    if (!confirm(`Вы уверены, что хотите завершить аукцион "${auctionTitle}" прямо сейчас?`)) {
+        return;
+    }
+    
+    $.ajax({
+        url: `/api/bids/finish-auction/${auctionId}`,
+        method: 'POST',
+        success: function(response) {
+            showNotification('Аукцион успешно завершен. Победитель определен.', 'success');
+            loadAuctions();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Ошибка при завершении аукциона';
+            showNotification(error, 'danger');
+        }
+    });
+}   
+
+/**
+ * Редактирует аукцион
+ */
+function editAuction(auctionId) {
+    window.location.href = `edit-auction.html?id=${auctionId}`;
 }
 
 /**
@@ -293,7 +369,6 @@ function renderCompletedAuctions(auctions) {
         const hasWinner = auction.status === 'FINISHED' && auction.winnerName;
         const winnerInfo = hasWinner ?
             `<small class="text-muted d-block mt-1"><i class="bi bi-trophy me-1"></i>Победитель: ${auction.winnerName || 'Неизвестен'}</small>` : '';
-
         html += `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
@@ -422,7 +497,6 @@ function getTimeClass(timeLeft) {
  */
 function filterAuctions(filter) {
     let filteredAuctions = [...window.allAuctions];
-
     switch(filter) {
         case 'new':
             filteredAuctions = filteredAuctions.filter(auction => isAuctionNew(auction.createdAt));
