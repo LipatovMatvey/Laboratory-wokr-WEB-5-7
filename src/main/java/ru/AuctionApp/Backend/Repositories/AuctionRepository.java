@@ -45,10 +45,17 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     List<Auction> findByStatusAndEndTimeBefore(String status, LocalDateTime now);
 
     /**
-     *
-     * @param winnerId
-     * @param status
-     * @return
+     * Ищет аукционы по победителю и статусу
+     * @param winnerId - ID победителя
+     * @param status - статус аукциона
+     * @return - список аукционов
      */
     List<Auction> findByWinnerIdAndStatusOrderByEndTimeDesc(Long winnerId, String status);
+
+    /**
+     * Ищет аукционы по нескольким статусам
+     * @param statuses - список статусов
+     * @return - список аукционов с указанными статусами
+     */
+    List<Auction> findByStatusIn(List<String> statuses);
 }

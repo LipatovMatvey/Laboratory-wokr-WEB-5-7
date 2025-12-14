@@ -44,4 +44,12 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
      * @return список выигрышных ставок пользователя
      */
     List<Bid> findByUserIdAndWinningTrueOrderByCreatedAtDesc(Long userId);
+
+    /**
+     * Находит ставки по ID аукциона, отсортированные по убыванию суммы
+     * @param auctionId ID аукциона
+     * @return список ставок
+     */
+    List<Bid> findByAuctionIdOrderByAmountDesc(Long auctionId);
+
 }

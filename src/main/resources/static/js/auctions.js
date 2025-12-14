@@ -1,5 +1,4 @@
 $(document).ready(function() {
-    // Проверяем авторизацию при загрузке страницы
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (!user.authenticated) {
         updateNavigation({ authenticated: false });
@@ -68,8 +67,6 @@ function updateNavigation(response) {
         $('#login-item').addClass('hidden');
         $('#logout-item').removeClass('hidden');
         $('#user-cabinet-item').removeClass('hidden');
-
-        // Сохраняем данные пользователя
         const userData = {
             authenticated: true,
             id: response.id,
@@ -82,7 +79,6 @@ function updateNavigation(response) {
             balance: response.balance || 0
         };
         localStorage.setItem('user', JSON.stringify(userData));
-
         if (response.role === 'admin') {
             $('#create-auction-btn').removeClass('hidden');
         } else {
@@ -96,8 +92,6 @@ function updateNavigation(response) {
         $('#logout-item').addClass('hidden');
         $('#user-cabinet-item').addClass('hidden');
         $('#create-auction-btn').addClass('hidden');
-
-        // Сохраняем данные гостя
         localStorage.setItem('user', JSON.stringify({ authenticated: false }));
     }
 }
@@ -165,7 +159,31 @@ function loadAuctions() {
 }
 
 /**
- * Отображает список аукционов в контейнере
+ * Загружает завершенные аукционы с сервера
+ * @returns {void}
+ */
+function loadCompletedAuctions() {
+    $.ajax({
+        url: "/api/auctions/completed",
+        method: "GET",
+        success: function(auctions) {
+            renderCompletedAuctions(auctions);
+        },
+        error: function(xhr) {
+            $('#auctions-list').html(`
+                <div class="col-12 text-center">
+                    <p class="text-danger">Ошибка загрузки завершенных аукционов</p>
+                    <button onclick="loadCompletedAuctions()" class="btn btn-sm btn-outline-secondary mt-2">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Повторить попытку
+                    </button>
+                </div>
+            `);
+        }
+    });
+}
+
+/**
+ * Отображает список активных аукционов в контейнере
  * @param {Array<Object>} auctions - Массив объектов аукционов
  * @returns {void}
  */
@@ -177,7 +195,7 @@ function renderAuctions(auctions) {
                 <div class="mb-3">
                     <i class="bi bi-binoculars" style="font-size: 3rem; color: #6c757d;"></i>
                 </div>
-                <p class="text-muted mb-2">Аукционы по выбранному фильтру отсутствуют</p>
+                <p class="text-muted mb-2">Активные аукционы отсутствуют</p>
                 <p class="text-muted small">Попробуйте изменить фильтр или вернитесь позже</p>
             </div>
         `);
@@ -189,7 +207,6 @@ function renderAuctions(auctions) {
         const timeClass = getTimeClass(timeLeft);
         const isNew = isAuctionNew(auction.createdAt);
         const badge = isNew ? '<span class="badge bg-success me-2"><i class="bi bi-star-fill me-1"></i>Новый</span>' : '';
-        const endingSoon = timeLeft.includes('час') || timeLeft.includes('час') ? '<span class="badge bg-danger me-2"><i class="bi bi-clock me-1"></i>Скоро завершение</span>' : '';
         const creatorBadge = auction.creatorName ? `<span class="badge bg-secondary me-2"><i class="bi bi-person me-1"></i>${auction.creatorName}</span>` : '';
         html += `
             <div class="col-md-6 col-lg-4 mb-4" data-auction-id="${auction.id}" data-is-new="${isNew}" data-time-left="${timeLeft}">
@@ -199,10 +216,9 @@ function renderAuctions(auctions) {
                             class="card-img-top" alt="${auction.title}"
                             style="height: 200px; object-fit: cover;"
                             onerror="this.onerror=null; this.src='/uploads/auctions/NOFOTO.jpg'">
-                        ${isNew || timeClass.includes('danger') ? `
+                        ${isNew ? `
                             <div class="position-absolute top-0 start-0 m-2">
-                                ${isNew ? '<span class="badge bg-success">Новый</span>' : ''}
-                                ${timeClass.includes('danger') ? '<span class="badge bg-danger ms-1">Скоро завершение</span>' : ''}
+                                <span class="badge bg-success">Новый</span>
                             </div>
                         ` : ''}
                     </div>
@@ -248,18 +264,80 @@ function renderAuctions(auctions) {
 }
 
 /**
+ * Отображает список завершенных аукционов
+ * @param {Array<Object>} auctions - Массив завершенных аукционов
+ * @returns {void}
+ */
+function renderCompletedAuctions(auctions) {
+    const $container = $('#auctions-list');
+    if (!auctions || auctions.length === 0) {
+        $container.html(`
+            <div class="col-12 text-center py-5">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                </div>
+                <p class="text-muted mb-2">Завершенные аукционы отсутствуют</p>
+            </div>
+        `);
+        return;
+    }
+    let html = '';
+    auctions.forEach(auction => {
+        const endTime = new Date(auction.endTime);
+        const statusClass = auction.status === 'FINISHED' ? 'badge bg-success' :
+                          auction.status === 'EXPIRED' ? 'badge bg-warning' :
+                          auction.status === 'CANCELLED' ? 'badge bg-danger' : 'badge bg-secondary';
+        const statusText = auction.status === 'FINISHED' ? 'Завершен' :
+                          auction.status === 'EXPIRED' ? 'Истек без ставок' :
+                          auction.status === 'CANCELLED' ? 'Отменен' : 'Неизвестно';
+        const hasWinner = auction.status === 'FINISHED' && auction.winnerName;
+        const winnerInfo = hasWinner ?
+            `<small class="text-muted d-block mt-1"><i class="bi bi-trophy me-1"></i>Победитель: ${auction.winnerName || 'Неизвестен'}</small>` : '';
+
+        html += `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <img src="${auction.imageUrl || '/uploads/auctions/NOFOTO.jpg'}"
+                         class="card-img-top" alt="${auction.title}"
+                         style="height: 150px; object-fit: cover;"
+                         onerror="this.onerror=null; this.src='/uploads/auctions/NOFOTO.jpg'">
+                    <div class="card-body">
+                        <h5 class="card-title">${auction.title}</h5>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="${statusClass}">${statusText}</span>
+                            <small class="text-muted">${endTime.toLocaleDateString('ru-RU')}</small>
+                        </div>
+                        <p class="card-text small text-muted">
+                            ${auction.description ? (auction.description.substring(0, 60) + '...') : 'Нет описания'}
+                        </p>
+                        ${winnerInfo}
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <strong class="text-success">${formatPrice(auction.currentPrice || auction.startPrice || 0)} ₽</strong>
+                            <small class="text-muted">Ставок: ${auction.bidsCount || 0}</small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="auction-detail.html?id=${auction.id}" class="btn btn-sm btn-outline-primary w-100">
+                            Посмотреть детали
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    $container.html(html);
+}
+
+/**
  * Возвращает соответствующую кнопку для аукциона в зависимости от авторизации
  * @param {Object} auction - Объект аукциона
  * @returns {string} HTML кнопки
  */
 function getAuctionButton(auction) {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-    // Проверяем, завершен ли аукцион
     const endTime = new Date(auction.endTime);
     const now = new Date();
     const isEnded = now > endTime || auction.status === 'FINISHED' || auction.status === 'CANCELLED';
-
     if (isEnded) {
         return `
             <a href="auction-detail.html?id=${auction.id}" class="btn btn-secondary">
@@ -267,8 +345,6 @@ function getAuctionButton(auction) {
             </a>
         `;
     }
-
-    // Проверяем авторизацию
     if (user.authenticated) {
         return `
             <a href="auction-detail.html?id=${auction.id}" class="btn btn-primary">
@@ -334,33 +410,33 @@ function getCategoryName(category) {
  */
 function getTimeClass(timeLeft) {
     if (timeLeft.includes('Завершен')) return 'text-danger';
-    if (timeLeft.includes('час') || timeLeft.includes('час')) return 'text-danger';
-    if (timeLeft.includes('день')) return 'text-warning';
+    if (timeLeft.includes('час') || timeLeft.includes('час')) return 'text-warning';
+    if (timeLeft.includes('день')) return 'text-success';
     return 'text-success';
 }
 
 /**
  * Фильтрует аукционы по выбранному критерию
- * @param {string} filter - Критерий фильтрации ('all', 'ending', 'new')
+ * @param {string} filter - Критерий фильтрации ('all', 'new', 'completed')
  * @returns {void}
  */
 function filterAuctions(filter) {
     let filteredAuctions = [...window.allAuctions];
+
     switch(filter) {
-        case 'ending':
-            filteredAuctions = filteredAuctions.filter(auction => {
-                const timeLeft = calculateTimeLeft(auction.endTime);
-                return timeLeft.includes('час') || timeLeft.includes('час');
-            });
-            break;
         case 'new':
             filteredAuctions = filteredAuctions.filter(auction => isAuctionNew(auction.createdAt));
             break;
+        case 'completed':
+            loadCompletedAuctions();
+            return;
         case 'all':
         default:
             break;
     }
-    renderAuctions(filteredAuctions);
+    if (filter !== 'completed') {
+        renderAuctions(filteredAuctions);
+    }
 }
 
 /**

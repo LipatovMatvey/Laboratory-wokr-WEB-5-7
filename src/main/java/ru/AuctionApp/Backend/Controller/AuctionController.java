@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auctions")
@@ -132,5 +133,61 @@ public class AuctionController {
     @GetMapping("/featured")
     public List<AuctionDTO> getFeaturedAuctions() {
         return auctionService.getFeaturedAuctions();
+    }
+
+    /**
+     * Получает список завершенных аукционов
+     * @return - список DTO завершенных аукционов
+     */
+    @GetMapping("/completed")
+    public List<AuctionDTO> getCompletedAuctions() {
+        return auctionService.getCompletedAuctions();
+    }
+
+    /**
+     * Получает список завершенных аукционов текущего пользователя.
+     * @param session - текущая HTTP-сессия для определения пользователя
+     * @return - список DTO завершенных аукционов пользователя
+     */
+    @GetMapping("/my/completed")
+    public ResponseEntity<?> getUserCompletedAuctions(HttpSession session) {
+        try {
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Не авторизован"));
+            }
+
+            // Получаем все завершенные аукционы
+            List<AuctionDTO> allCompletedAuctions = auctionService.getCompletedAuctions();
+
+            // Фильтруем только аукционы текущего пользователя
+            List<AuctionDTO> userCompletedAuctions = allCompletedAuctions.stream()
+                    .filter(auction -> auction.getCreatorId() != null && auction.getCreatorId().equals(userId))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(userCompletedAuctions);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Принудительная проверка и обновление статусов завершенных аукционов
+     * @return - результат проверки
+     */
+    @PostMapping("/check-expired")
+    public ResponseEntity<?> checkExpiredAuctions() {
+        try {
+            int updatedCount = auctionService.checkAndUpdateExpiredAuctions();
+            return ResponseEntity.ok(Map.of(
+                    "message", "Статусы аукционов обновлены",
+                    "updatedCount", updatedCount
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }

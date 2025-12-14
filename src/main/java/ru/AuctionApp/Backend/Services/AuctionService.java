@@ -5,8 +5,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.AuctionApp.Backend.DTO.AuctionDTO;
 import ru.AuctionApp.Backend.Entity.Auction;
+import ru.AuctionApp.Backend.Entity.Bid;
 import ru.AuctionApp.Backend.Entity.User;
 import ru.AuctionApp.Backend.Repositories.AuctionRepository;
+import ru.AuctionApp.Backend.Repositories.BidRepository;
 import ru.AuctionApp.Backend.Repositories.UsersRepository;
 
 import java.io.IOException;
@@ -15,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,6 +36,12 @@ public class AuctionService {
      */
     @Autowired
     private UsersRepository usersRepository;
+
+    /**
+     *
+     */
+    @Autowired
+    private BidRepository bidRepository;
 
     /**
      * Создает новый аукцион.
@@ -146,5 +155,71 @@ public class AuctionService {
                 .limit(6)
                 .map(AuctionDTO::new)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Получает список завершенных аукционов
+     * @return - список DTO завершенных аукционов
+     */
+    public List<AuctionDTO> getCompletedAuctions() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // Ищем активные аукционы, у которых время окончания прошло
+        List<Auction> expiredAuctions = auctionRepository.findByStatusAndEndTimeBefore("ACTIVE", now);
+
+        // Обновляем статус у завершенных аукционов
+        for (Auction auction : expiredAuctions) {
+            updateAuctionStatus(auction);
+        }
+
+        // Теперь ищем аукционы с завершенными статусами
+        List<String> completedStatuses = Arrays.asList("FINISHED", "EXPIRED", "CANCELLED");
+        List<Auction> completedAuctions = auctionRepository.findByStatusIn(completedStatuses);
+
+        return completedAuctions.stream()
+                .map(AuctionDTO::new)
+                .sorted((a1, a2) -> a2.getEndTime().compareTo(a1.getEndTime()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Обновляет статус аукциона при его завершении
+     * @param auction - аукцион для обновления
+     */
+    private void updateAuctionStatus(Auction auction) {
+        // Получаем все ставки для этого аукциона, отсортированные по убыванию суммы
+        List<Bid> bids = bidRepository.findByAuctionIdOrderByAmountDesc(auction.getId());
+
+        if (bids.isEmpty()) {
+            // Нет ставок - аукцион истек
+            auction.setStatus("EXPIRED");
+        } else {
+            // Есть ставки - определяем победителя (последняя лидирующая ставка)
+            Bid winningBid = bids.stream()
+                    .filter(Bid::isWinning)
+                    .findFirst()
+                    .orElse(bids.get(0)); // Если нет winning=true, берем самую большую
+
+            auction.setWinner(winningBid.getUser());
+            auction.setCurrentPrice(winningBid.getAmount());
+            auction.setStatus("FINISHED");
+        }
+
+        auctionRepository.save(auction);
+    }
+
+    /**
+     * Проверяет и обновляет статусы аукционов, время которых истекло
+     * @return - количество обновленных аукционов
+     */
+    public int checkAndUpdateExpiredAuctions() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Auction> expiredAuctions = auctionRepository.findByStatusAndEndTimeBefore("ACTIVE", now);
+
+        for (Auction auction : expiredAuctions) {
+            updateAuctionStatus(auction);
+        }
+
+        return expiredAuctions.size();
     }
 }

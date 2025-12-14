@@ -502,10 +502,8 @@ function updateUserDataOnly(user, userData, $submitBtn, originalText, avatarUpda
 function loadUserBids() {
     const userStr = localStorage.getItem('user');
     if (!userStr) return;
-    
     const user = JSON.parse(userStr);
     console.log('Загрузка ставок для пользователя:', user.id);
-    
     $.ajax({
         url: `/api/users/${user.id}/bids`,
         method: "GET",
@@ -534,7 +532,6 @@ function loadUserBids() {
  */
 function renderUserBids(bids) {
     const $container = $('#user-bids');
-    
     if (!bids || bids.length === 0) {
         $container.html(`
             <div class="text-center py-4">
@@ -547,7 +544,6 @@ function renderUserBids(bids) {
         `);
         return;
     }
-    
     let html = '';
     bids.forEach(bid => {
         const statusClass = bid.isWinning ? 'text-success' : 'text-secondary';
@@ -556,7 +552,6 @@ function renderUserBids(bids) {
             '<span class="badge bg-secondary"><i class="bi bi-clock-history me-1"></i>Перебита</span>';
         const date = new Date(bid.createdAt).toLocaleString('ru-RU');
         const auctionLink = `auction-detail.html?id=${bid.auctionId}`;
-        
         html += `
             <div class="bid-item mb-3 pb-3 border-bottom">
                 <div class="d-flex justify-content-between align-items-start">
@@ -581,7 +576,6 @@ function renderUserBids(bids) {
             </div>
         `;
     });
-    
     $container.html(html);
 }
 
@@ -623,7 +617,6 @@ function loadWonLots() {
  */
 function renderWonLots(wonLots) {
     const $container = $('#won-lots');
-    
     if (!wonLots || wonLots.length === 0) {
         $container.html(`
             <div class="text-center py-4">
@@ -636,12 +629,10 @@ function renderWonLots(wonLots) {
         `);
         return;
     }
-    
     let html = '';
     wonLots.forEach(lot => {
         const winDate = new Date(lot.winDate).toLocaleDateString('ru-RU');
         const imageUrl = lot.imageUrl || '/uploads/auctions/NOFOTO.jpg';
-        
         html += `
             <div class="won-lot-item mb-3">
                 <div class="card border-success">
@@ -675,7 +666,77 @@ function renderWonLots(wonLots) {
             </div>
         `;
     });
-    
+    $container.html(html);
+}
+
+
+function loadCompletedAuctions() {
+    $.ajax({
+        url: "/api/auctions/my/completed",
+        method: "GET",
+        success: function(auctions) {
+            renderCompletedAuctions(auctions);
+        },
+        error: function(xhr) {
+            console.error("Ошибка загрузки завершенных аукционов");
+            $('#completed-auctions').html(`
+                <div class="text-center py-4">
+                    <p class="text-muted">Не удалось загрузить завершенные аукционы</p>
+                </div>
+            `);
+        }
+    });
+}
+
+function renderCompletedAuctions(auctions) {
+    const $container = $('#completed-auctions');
+    if (!auctions || auctions.length === 0) {
+        $container.html(`
+            <div class="text-center py-4">
+                <p class="text-muted">Нет завершенных аукционов</p>
+            </div>
+        `);
+        return;
+    }
+    let html = '';
+    auctions.forEach(auction => {
+        const endTime = new Date(auction.endTime);
+        const statusClass = auction.status === 'FINISHED' ? 'badge bg-success' :
+                           auction.status === 'EXPIRED' ? 'badge bg-warning' :
+                           auction.status === 'CANCELLED' ? 'badge bg-danger' : 'badge bg-secondary';
+        const statusText = auction.status === 'FINISHED' ? 'Завершен' :
+                          auction.status === 'EXPIRED' ? 'Истек без ставок' :
+                          auction.status === 'CANCELLED' ? 'Отменен' : 'Неизвестно';
+        html += `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <img src="${auction.imageUrl || '/uploads/auctions/NOFOTO.jpg'}"
+                         class="card-img-top" alt="${auction.title}"
+                         style="height: 150px; object-fit: cover;">
+                    <div class="card-body">
+                        <h6 class="card-title">${auction.title}</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="${statusClass}">${statusText}</span>
+                            <small class="text-muted">${endTime.toLocaleDateString('ru-RU')}</small>
+                        </div>
+                        <p class="card-text small text-muted">
+                            ${auction.description ? (auction.description.substring(0, 60) + '...') : 'Нет описания'}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>${formatPrice(auction.currentPrice || auction.startPrice || 0)} ₽</strong>
+                            <small class="text-muted">Ставок: ${auction.bidsCount || 0}</small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="auction-detail.html?id=${auction.id}" class="btn btn-sm btn-outline-primary w-100">
+                            Посмотреть детали
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
     $container.html(html);
 }
 

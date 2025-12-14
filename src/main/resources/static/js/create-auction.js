@@ -25,7 +25,7 @@ updateServerTime();
  */
 function initializeForm() {
     const now = new Date();
-    now.setHours(now.getHours() + 1);
+    now.setMinutes(now.getMinutes() + 3);
     const minDateTime = now.toISOString().slice(0, 16);
     $('#startTime').attr('min', minDateTime);
     $('#endTime').attr('min', minDateTime);
@@ -134,9 +134,9 @@ function validateForm() {
         showFieldError($('#startTime'), 'Время начала не может быть в прошлом');
         isValid = false;
     }
-    const minDuration = 60 * 60 * 1000;
+    const minDuration = 3 * 60 * 1000;
     if ((endTime - startTime) < minDuration) {
-        showFieldError($('#endTime'), 'Минимальная длительность аукциона - 1 час');
+        showFieldError($('#endTime'), 'Минимальная длительность аукциона - 3 минуты');
         isValid = false;
     }
     return isValid;

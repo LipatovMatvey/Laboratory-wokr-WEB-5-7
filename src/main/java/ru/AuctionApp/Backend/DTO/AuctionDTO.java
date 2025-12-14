@@ -82,6 +82,16 @@ public class AuctionDTO {
     private Long creatorId;
 
     /**
+     * Имя победителя аукциона.
+     */
+    private String winnerName;
+
+    /**
+     * Идентификатор победителя аукциона.
+     */
+    private Long winnerId;
+
+    /**
      * Конструктор по умолчанию
      */
     public AuctionDTO(){
@@ -122,5 +132,7 @@ public class AuctionDTO {
         this.createdAt = auction.getCreatedAt();
         this.creatorId = auction.getCreator() != null ? auction.getCreator().getId() : null;
         this.creatorName = auction.getCreator() != null ? auction.getCreator().getFullName() : "Система";
+        this.winnerId = auction.getWinner() != null ? auction.getWinner().getId() : null;
+        this.winnerName = auction.getWinner() != null ? auction.getWinner().getFullName() : null;
     }
 }
