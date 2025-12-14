@@ -669,7 +669,10 @@ function renderWonLots(wonLots) {
     $container.html(html);
 }
 
-
+/**
+ * 
+ * @returns {undefined}
+ */
 function loadCompletedAuctions() {
     $.ajax({
         url: "/api/auctions/my/completed",
@@ -687,7 +690,11 @@ function loadCompletedAuctions() {
         }
     });
 }
-
+/**
+ * 
+ * @param {type} auctions
+ * @returns {undefined}
+ */
 function renderCompletedAuctions(auctions) {
     const $container = $('#completed-auctions');
     if (!auctions || auctions.length === 0) {
