@@ -327,4 +327,84 @@ public class AuctionController {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Удаляет завершенный аукцион (только для администраторов)
+     * @param id ID аукциона
+     * @param session HTTP сессия
+     * @return результат удаления
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteCompletedAuction(
+            @PathVariable Long id,
+            HttpSession session
+    ) {
+        try {
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Не авторизован"));
+            }
+
+            User currentUser = usersRepository.findById(userId).orElse(null);
+            if (currentUser == null || !"admin".equals(currentUser.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Только администраторы могут удалять аукционы"));
+            }
+
+            Auction auction = auctionRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Аукцион не найден"));
+
+            // Проверяем, что аукцион завершен
+            List<String> completedStatuses = List.of("FINISHED", "EXPIRED", "CANCELLED");
+            if (!completedStatuses.contains(auction.getStatus())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Можно удалять только завершенные аукционы"));
+            }
+
+            // Удаляем аукцион
+            auctionRepository.delete(auction);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Аукцион успешно удален",
+                    "deletedAuction", new AuctionDTO(auction)
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Ошибка при удалении аукциона: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Получает список завершенных аукционов для администратора
+     * @param session HTTP сессия
+     * @return список завершенных аукционов
+     */
+    @GetMapping("/completed-for-admin")
+    public ResponseEntity<?> getCompletedAuctionsForAdmin(HttpSession session) {
+        try {
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Не авторизован"));
+            }
+
+            User currentUser = usersRepository.findById(userId).orElse(null);
+            if (currentUser == null || !"admin".equals(currentUser.getRole())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Только администраторы могут просматривать этот список"));
+            }
+
+            List<AuctionDTO> completedAuctions = auctionService.getCompletedAuctions();
+            return ResponseEntity.ok(completedAuctions);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Ошибка при получении списка аукционов: " + e.getMessage()));
+        }
+    }
 }

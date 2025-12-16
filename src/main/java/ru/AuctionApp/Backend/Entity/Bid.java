@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "bids")
 public class Bid {
+
     /**
      * Идентификатор ставки
      */

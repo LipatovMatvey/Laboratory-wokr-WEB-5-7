@@ -301,7 +301,6 @@ function setupAdminButtons() {
         const auctionId = $(this).data('auction-id');
         editAuction(auctionId);
     });
-    
     $('.finish-auction-btn').on('click', function(e) {
         e.stopPropagation();
         const auctionId = $(this).data('auction-id');
@@ -317,7 +316,6 @@ function finishAuction(auctionId, auctionTitle) {
     if (!confirm(`Вы уверены, что хотите завершить аукцион "${auctionTitle}" прямо сейчас?`)) {
         return;
     }
-    
     $.ajax({
         url: `/api/bids/finish-auction/${auctionId}`,
         method: 'POST',
@@ -330,7 +328,7 @@ function finishAuction(auctionId, auctionTitle) {
             showNotification(error, 'danger');
         }
     });
-}   
+}
 
 /**
  * Редактирует аукцион
@@ -357,6 +355,8 @@ function renderCompletedAuctions(auctions) {
         `);
         return;
     }
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const isAdmin = user.authenticated && user.role === 'admin';
     let html = '';
     auctions.forEach(auction => {
         const endTime = new Date(auction.endTime);
@@ -369,6 +369,14 @@ function renderCompletedAuctions(auctions) {
         const hasWinner = auction.status === 'FINISHED' && auction.winnerName;
         const winnerInfo = hasWinner ?
             `<small class="text-muted d-block mt-1"><i class="bi bi-trophy me-1"></i>Победитель: ${auction.winnerName || 'Неизвестен'}</small>` : '';
+        const deleteButton = isAdmin ? `
+            <button type="button" class="btn btn-sm btn-outline-danger mt-2 delete-auction-btn"
+                    data-auction-id="${auction.id}"
+                    data-auction-title="${auction.title}">
+                <i class="bi bi-trash me-1"></i>Удалить
+            </button>
+        ` : '';
+
         html += `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
@@ -392,15 +400,48 @@ function renderCompletedAuctions(auctions) {
                         </div>
                     </div>
                     <div class="card-footer bg-transparent">
-                        <a href="auction-detail.html?id=${auction.id}" class="btn btn-sm btn-outline-primary w-100">
-                            Посмотреть детали
-                        </a>
+                        <div class="d-grid gap-2">
+                            <a href="auction-detail.html?id=${auction.id}" class="btn btn-sm btn-outline-primary">
+                                Посмотреть детали
+                            </a>
+                            ${deleteButton}
+                        </div>
                     </div>
                 </div>
             </div>
         `;
     });
     $container.html(html);
+    if (isAdmin) {
+        $('.delete-auction-btn').on('click', function() {
+            const auctionId = $(this).data('auction-id');
+            const auctionTitle = $(this).data('auction-title');
+            deleteCompletedAuction(auctionId, auctionTitle);
+        });
+    }
+}
+
+/**
+ * Удаляет завершенный аукцион
+ */
+function deleteCompletedAuction(auctionId, auctionTitle) {
+    if (!confirm(`Вы уверены, что хотите удалить аукцион "${auctionTitle}"? Это действие нельзя отменить.`)) {
+        return;
+    }
+
+    $.ajax({
+        url: `/api/auctions/${auctionId}`,
+        method: 'DELETE',
+        success: function(response) {
+            showNotification('Аукцион успешно удален', 'success');
+            // Перезагружаем список завершенных аукционов
+            loadCompletedAuctions();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Ошибка при удалении аукциона';
+            showNotification(error, 'danger');
+        }
+    });
 }
 
 /**

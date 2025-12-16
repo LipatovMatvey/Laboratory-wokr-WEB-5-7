@@ -1,6 +1,9 @@
 package ru.AuctionApp.Backend.Repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 import ru.AuctionApp.Backend.Entity.Auction;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,4 +61,20 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
      * @return - список аукционов с указанными статусами
      */
     List<Auction> findByStatusIn(List<String> statuses);
+
+    /**
+     * Удаляет аукцион по ID (с каскадным удалением ставок)
+     * @param id ID аукциона
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Auction a WHERE a.id = :id")
+    void deleteByIdCustom(Long id);
+
+    /**
+     * Ищет завершенные аукционы (статусы FINISHED, EXPIRED, CANCELLED)
+     * @return список завершенных аукционов
+     */
+    @Query("SELECT a FROM Auction a WHERE a.status IN ('FINISHED', 'EXPIRED', 'CANCELLED')")
+    List<Auction> findCompletedAuctions();
 }
