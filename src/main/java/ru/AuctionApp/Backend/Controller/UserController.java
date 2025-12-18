@@ -25,7 +25,6 @@ public class UserController {
     /**
      * Получает список всех пользователей (доступно только администраторам)
      * Возвращает полные данные, включая пароли
-     *
      * @param session HTTP сессия для проверки авторизации
      * @return ResponseEntity со списком пользователей или сообщением об ошибке
      */
@@ -63,7 +62,6 @@ public class UserController {
 
     /**
      * Получает данные конкретного пользователя по ID
-     *
      * @param id ID пользователя
      * @return ResponseEntity с данными пользователя или сообщением об ошибке
      */
@@ -88,7 +86,6 @@ public class UserController {
     /**
      * Обновляет данные пользователя (для обычных пользователей)
      * Разрешает обновление только ограниченного набора полей
-     *
      * @param id ID пользователя
      * @param updates Map с обновляемыми данными
      * @param session HTTP сессия для проверки авторизации
@@ -144,7 +141,6 @@ public class UserController {
 
     /**
      * Загружает или обновляет аватар пользователя
-     *
      * @param id ID пользователя
      * @param avatar файл изображения для загрузки
      * @param session HTTP сессия для проверки авторизации
@@ -212,7 +208,6 @@ public class UserController {
     /**
      * Обновляет данные пользователя с правами администратора
      * Позволяет изменять все поля, включая пароль и роль
-     *
      * @param id ID пользователя для обновления
      * @param updates Map с обновляемыми данными
      * @param session HTTP сессия для проверки прав администратора
@@ -325,7 +320,6 @@ public class UserController {
 
     /**
      * Блокирует или разблокирует пользователя
-     *
      * @param id ID пользователя для блокировки/разблокировки
      * @param request Map с ключом "banned" (true/false)
      * @param session HTTP сессия для проверки прав администратора
@@ -384,7 +378,6 @@ public class UserController {
 
     /**
      * Удаляет пользователя (только для администраторов)
-     *
      * @param id ID пользователя для удаления
      * @param session HTTP сессия для проверки прав администратора
      * @return ResponseEntity с сообщением об успешном удалении или ошибке
@@ -431,7 +424,6 @@ public class UserController {
 
     /**
      * Получает список ставок пользователя (заглушка)
-     *
      * @param id ID пользователя
      * @return ResponseEntity с пустым списком (требует реализации)
      */
@@ -442,7 +434,6 @@ public class UserController {
 
     /**
      * Получает список выигранных лотов пользователя (заглушка)
-     *
      * @param id ID пользователя
      * @return ResponseEntity с пустым списком (требует реализации)
      */
@@ -466,13 +457,12 @@ public class UserController {
         userData.put("role", user.getRole());
         userData.put("avatarPath", user.getAvatarPath());
         userData.put("bannedStatus", user.isBannedStatus());
-        userData.put("password", user.getPassword());
+        //userData.put("password", user.getPassword());
         return userData;
     }
 
     /**
      * Создает нового пользователя (доступно только администраторам)
-     *
      * @param userData Map с данными нового пользователя
      * @param session HTTP сессия для проверки прав администратора
      * @return ResponseEntity с созданным пользователем или сообщением об ошибке
@@ -495,7 +485,6 @@ public class UserController {
                         .body(Map.of("error", "Доступ запрещен. Только администраторы могут создавать пользователей"));
             }
 
-            // Валидация обязательных полей
             if (!userData.containsKey("fullName") || !userData.containsKey("email") || !userData.containsKey("password")) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Необходимо указать имя, email и пароль"));
@@ -508,7 +497,7 @@ public class UserController {
             String role = (String) userData.get("role");
 
             if (role == null) {
-                role = "user"; // По умолчанию создаем обычного пользователя
+                role = "user";
             }
 
             if (fullName == null || fullName.trim().isEmpty()) {
@@ -536,13 +525,11 @@ public class UserController {
                         .body(Map.of("error", "Пароль должен содержать минимум 6 символов"));
             }
 
-            // Проверка на существование email
             if (usersRepository.existsByEmail(email)) {
                 return ResponseEntity.status(HttpStatus.CONFLICT)
                         .body(Map.of("error", "Пользователь с таким email уже существует"));
             }
 
-            // Создаем нового пользователя
             User newUser = new User();
             newUser.setFullName(fullName.trim());
             newUser.setEmail(email.trim());
@@ -552,7 +539,6 @@ public class UserController {
             newUser.setVisits(0);
             newUser.setBannedStatus(false);
 
-            // Обработка статуса блокировки, если указан
             if (userData.containsKey("bannedStatus")) {
                 Object bannedStatusObj = userData.get("bannedStatus");
                 boolean banned = false;

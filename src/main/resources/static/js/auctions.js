@@ -16,6 +16,24 @@ $(document).ready(function() {
 });
 
 /**
+ * Запрашивает у сервера текущее московское время
+ * и отображает его в элементе #server-time.
+ * @returns {undefined}
+ */
+function updateServerTime() {
+    $.ajax({
+        url: "/api/time",
+        method: "GET",
+        success: function (data) {
+            $("#server-time").text("Точное московское время: "+data.time);
+        }
+    });
+}
+
+setInterval(updateServerTime, 1000);
+updateServerTime();
+
+/**
  * Проверяет авторизацию пользователя и обновляет UI
  * @returns {void}
  */

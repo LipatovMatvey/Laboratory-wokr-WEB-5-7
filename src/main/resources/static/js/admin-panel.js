@@ -25,7 +25,6 @@ function initAdminPanel() {
     $('#create-user-btn').off('click').on('click', showCreateUserModal);
     $('#save-new-user-btn').off('click').on('click', createNewUser);
     
-    // Обработчик загрузки аватара для нового пользователя
     $('#new-user-avatar').off('change').on('change', function(e) {
         if (e.target.files && e.target.files[0]) {
             previewNewUserAvatar(e.target.files[0]);
@@ -57,7 +56,6 @@ function loadAllUsers() {
         success: function(users) {
             const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
             allUsers = users.filter(user => user.id !== currentUser.id);
-            
             renderUsersTable();
             setupPagination();
         },
@@ -353,7 +351,6 @@ function openEditModal(userId) {
  * Показывает модальное окно для создания нового пользователя
  */
 function showCreateUserModal() {
-    // Сброс формы
     $('#new-user-form')[0].reset();
     $('#new-user-avatar-preview').html(`
         <div class="text-center">
@@ -364,10 +361,8 @@ function showCreateUserModal() {
         </div>
     `);
     
-    // Скрыть элемент предупреждения о файле
     $('#new-user-avatar-file-info').hide();
     
-    // Сброс загруженного файла
     $('#new-user-avatar').val('');
     
     const createModal = new bootstrap.Modal(document.getElementById('createUserModal'));
@@ -403,7 +398,6 @@ function createNewUser() {
         bannedStatus: $('#new-user-banned').prop('checked')
     };
     
-    // Валидация
     if (!userData.fullName) {
         showNotification('Пожалуйста, введите имя пользователя', 'warning');
         $('#new-user-fullname').focus();
@@ -449,17 +443,13 @@ function createNewUser() {
         success: function(newUser) {
             console.log('Пользователь успешно создан:', newUser);
             
-            // Добавляем нового пользователя в начало списка
             allUsers.unshift(newUser);
             
-            // Возвращаемся на первую страницу
             currentPage = 1;
             
-            // Обновляем таблицу и пагинацию
             renderUsersTable();
             setupPagination();
             
-            // Закрываем модальное окно
             const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
             if (modal) {
                 modal.hide();

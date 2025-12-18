@@ -36,7 +36,6 @@ public class AuthService {
 
     /**
      * Регистрирует нового пользователя
-     *
      * @param email - почта пользователя
      * @param fullName - ФИО пользователя
      * @param birthDate - дата рождения пользователя
@@ -97,13 +96,13 @@ public class AuthService {
             }
         }
 
-        User saved = userRepository.save(user);
+        User savedUser = userRepository.save(user);
 
         if (role == null || role.isBlank()) {
-            session.setAttribute("userId", saved.getId());
+            session.setAttribute("userId", savedUser.getId());
         }
 
-        return new UserDto(saved);
+        return new UserDto(savedUser);
     }
 
 

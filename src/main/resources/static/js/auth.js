@@ -93,7 +93,6 @@ $('#register-form').on('submit', function(e) {
         contentType: false,
         success: function(response) {
             localStorage.setItem('user', JSON.stringify(response));
-            console.log(response);
             window.location.href = "main.html";
         },
         error: function(xhr) {
@@ -108,6 +107,11 @@ $('#register-form').on('submit', function(e) {
     });
 });
 
+/**
+ * Функция проверки даты из поля с типом date на корректность
+ * @param {string} birthDate Строка в формате yyyy-mm-dd
+ * @returns {Boolean} true - дата соответствует регулярному выражению, false - не соответствует
+ */
 function validateDate(birthDate) {
     const today = new Date();
     const date = new Date(birthDate);
@@ -119,6 +123,11 @@ function validateDate(birthDate) {
     return age >= 0 && age <= 120 ? true : false;
 };
 
+/**
+ * Функция проверки поля с именем и фамилией на корректность ввода
+ * @param {string} fullName Строка с поля Имя и фамилия типа text
+ * @returns {Boolean} true - дата соответствует регулярному выражению, false - не соответствует
+ */
 function validFullName(fullName) {
     if (typeof fullName !== "string") return false;
     fullName = fullName.trim();

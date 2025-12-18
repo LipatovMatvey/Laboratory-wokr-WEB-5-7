@@ -76,14 +76,14 @@ public class AuthController {
     /**
      * Регистрирует нового пользователя.
      * После успешной регистрации создаёт сессию и возвращает данные пользователя
-     * @param email - Электронная почта
-     * @param fullName - ФИО
-     * @param birthDate - дата рождения
-     * @param password - пароль
-     * @param avatar - файл изображения (необязательный)
-     * @param role - роль, если регистрирует админ
-     * @param session - текущая HTTP-сессия
-     * @return - данные зарегистрированного пользователя
+     * @param email Электронная почта
+     * @param fullName ФИО
+     * @param birthDate дата рождения
+     * @param password пароль
+     * @param avatar файл изображения (необязательный)
+     * @param role роль, если регистрирует админ
+     * @param session текущая HTTP-сессия
+     * @return данные зарегистрированного пользователя
      */
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public UserDto register(
@@ -100,9 +100,9 @@ public class AuthController {
 
     /**
      * Авторизует пользователя по email и паролю
-     * @param loginData - объект User, содержащий email и password
-     * @param session - текущая HTTP-сессия
-     * @return - данные авторизованного пользователя
+     * @param loginData объект User, содержащий email и password
+     * @param session текущая HTTP-сессия
+     * @return данные авторизованного пользователя
      */
     @PostMapping("/login")
     public UserDto login(@RequestBody User loginData, HttpSession session) {

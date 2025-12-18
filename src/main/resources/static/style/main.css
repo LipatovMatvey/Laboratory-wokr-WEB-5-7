@@ -2,6 +2,21 @@
     display: none !important;
 }
 
+#newsCreator {
+    padding-top: 10px;
+}
+
+#newsBlock {
+    height: 800px;
+    overflow-y: auto;
+    padding-right: 10px
+}
+
+#newsContent {
+    max-height: 100px;
+    overflow: hidden;
+}
+
 .page-content {
     min-height: 60vh;
 }
@@ -56,28 +71,23 @@
     line-height: 1.4;
 }
 
-/* Стили для навигации */
 .navbar-brand {
     font-weight: bold;
 }
 
-/* Стили для аватара */
 .rounded-circle {
     object-fit: cover;
 }
 
-/* Стили для уведомлений */
 .toast {
     min-width: 300px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-/* Скрытые элементы */
 .hidden {
     display: none !important;
 }
 
-/* Стили для личного кабинета */
 .form-control-plaintext {
     padding: 0.375rem 0;
     line-height: 1.5;
@@ -113,7 +123,6 @@
     display: block;
 }
 
-/* Аватар */
 #user-avatar {
     object-fit: cover;
     border: 3px solid #dee2e6;
@@ -126,7 +135,6 @@
     transform: scale(1.05);
 }
 
-/* Стили для режима редактирования */
 .form-control.d-none {
     display: none !important;
 }
@@ -135,7 +143,6 @@
     display: block !important;
 }
 
-/* Дополнительные стили для исправления проблем */
 .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -150,7 +157,6 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Стили для модальных окон */
 .modal-backdrop {
     z-index: 1040;
 }
@@ -159,7 +165,6 @@
     z-index: 1050;
 }
 
-/* Стили для форм */
 .form-label {
     font-weight: 500;
     margin-bottom: 0.3rem;
@@ -170,7 +175,6 @@
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-/* Стили для бейджей ролей */
 .badge {
     font-size: 0.85em;
     padding: 0.35em 0.65em;
@@ -182,12 +186,10 @@
 .bg-danger { background-color: #dc3545 !important; }
 .bg-secondary { background-color: #6c757d !important; }
 
-/* Улучшение отображения статусов */
 .text-success { color: #198754 !important; }
 .text-danger { color: #dc3545 !important; }
 .text-warning { color: #ffc107 !important; }
 
-/* Улучшение таблицы */
 .table th {
     font-weight: 600;
     background-color: #f8f9fa;
@@ -208,7 +210,6 @@
     background-color: rgba(0, 0, 0, 0.02);
 }
 
-/* Улучшение вкладок */
 .nav-tabs .nav-link {
     color: #495057;
     border: 1px solid transparent;
@@ -227,14 +228,12 @@
     font-weight: 500;
 }
 
-/* Улучшение карточек */
 .card-header {
     background-color: rgba(0, 0, 0, 0.03);
     border-bottom: 1px solid rgba(0, 0, 0, 0.125);
     font-weight: 500;
 }
 
-/* Улучшение инпутов файлов */
 input[type="file"] {
     cursor: pointer;
 }
@@ -243,12 +242,10 @@ input[type="file"]:disabled {
     cursor: not-allowed;
 }
 
-/* Улучшение отображения пустых состояний */
 .text-muted {
     color: #6c757d !important;
 }
 
-/* Улучшение пагинации */
 .pagination .page-link {
     color: #0d6efd;
     border: 1px solid #dee2e6;
@@ -265,39 +262,22 @@ input[type="file"]:disabled {
     border-color: #dee2e6;
 }
 
-/* Улучшение иконок в кнопках */
 .btn i, .btn span[role="img"] {
     margin-right: 4px;
 }
 
-/* Анимации для плавности */
 .btn, .form-control, .nav-link, .badge {
     transition: all 0.2s ease-in-out;
 }
 
-/* Улучшение отзывчивости */
-@media (max-width: 768px) {
-    .btn-group-sm .btn {
-        font-size: 0.75rem;
-        padding: 0.2rem 0.4rem;
-    }
-    
-    .table th, .table td {
-        padding: 0.5rem;
-    }
-}
-
-/* Стили для индикаторов загрузки */
 .spinner-border {
     vertical-align: middle;
 }
 
-/* Улучшение выравнивания в таблице */
 .table td, .table th {
     vertical-align: middle;
 }
 
-/* Улучшение внешнего вида таблицы */
 .table {
     border-collapse: separate;
     border-spacing: 0;
@@ -314,18 +294,21 @@ input[type="file"]:disabled {
     border-bottom: 2px solid #6c757d;
 }
 
-/* Улучшение видимости строк при наведении */
 .table-hover tbody tr:hover {
     background-color: #f8f9fa;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Явные границы для ячеек */
 .table-bordered td, .table-bordered th {
     border: 1px solid #dee2e6;
 }
 
-/* Улучшение отступов для лучшей читаемости */
 .table td, .table th {
     padding: 12px 10px;
+}
+
+#button_block {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
 }

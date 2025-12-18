@@ -1,16 +1,14 @@
-$(document).ready(function() {
-    checkAuth();
-    
-    $('#logout-btn').on('click', function() {
-        logout();
-    });
-    
-    loadFeaturedAuctions();
+checkAuth();
+loadNewsFeed();
+$('#logout-btn').on('click', function() {
+    logout();
 });
+
+loadFeaturedAuctions();
+
 
 /**
  * Проверяет статус авторизации пользователя
- * @returns {void}
  */
 function checkAuth() {
     $.ajax({
@@ -28,7 +26,6 @@ function checkAuth() {
 /**
  * Обновляет навигацию на основе данных пользователя
  * @param {Object} response - Объект с данными пользователя
- * @returns {void}
  */
 function updateNavigation(response) {
     if (response.authenticated) {
@@ -64,7 +61,6 @@ function getRoleDisplayName(role) {
 
 /**
  * Выполняет выход пользователя из системы
- * @returns {void}
  */
 function logout() {
     $.ajax({
@@ -83,7 +79,6 @@ function logout() {
 
 /**
  * Загружает рекомендуемые аукционы для главной страницы
- * @returns {void}
  */
 function loadFeaturedAuctions() {
     $.ajax({
@@ -106,7 +101,6 @@ function loadFeaturedAuctions() {
 /**
  * Отображает рекомендуемые аукционы на главной странице
  * @param {Array<Object>} auctions - Массив объектов аукционов
- * @returns {void}
  */
 function renderFeaturedAuctions(auctions) {
     const $container = $('#featured-auctions');
@@ -170,17 +164,49 @@ function calculateTimeLeft(endTime) {
 /**
  * Запрашивает у сервера текущее московское время
  * и отображает его в элементе #server-time.
- * @returns {undefined}
  */
 function updateServerTime() {
     $.ajax({
         url: "/api/time",
         method: "GET",
         success: function (data) {
-            $("#server-time").text("Точное московское время: "+data.time);
+            $("#server-time").text("Точное московское время: " + data.time);
         }
     });
 }
 
 setInterval(updateServerTime, 1000);
 updateServerTime();
+
+
+/**
+ * Функция подгружает новости в ленту новостей
+ */
+function loadNewsFeed() {
+    $.ajax({
+        url: "/api/news",
+        method: "GET",
+        success: function (news) {
+            let html = '';
+            news.forEach( news => {
+                const serverDate = new Date(news.creatingDate);
+                const serverDateFormat = String(serverDate.getDate()).padStart(2, '0') + 
+                    "." + String(serverDate.getMonth() + 1).padStart(2, '0') + "." +
+                    serverDate.getFullYear();
+                html += `
+                    <div class="news-item mb-3 pb-3 border-bottom">
+                        <h6 class="news-title">${news.title}</h6>
+                        <p class="news-content small text-muted" id="newsContent">${news.content}</p>
+                        <small class="text-muted">${news.createdBy}</small>
+                        <small class="text-muted">${serverDateFormat}</small>
+                    </div>
+                `;
+            });
+           $("#news-feed").append(html); 
+        },
+        error: function () {
+            showUserNotification("Ошибка связи с сервером", "danger");
+        }
+    });
+    
+}

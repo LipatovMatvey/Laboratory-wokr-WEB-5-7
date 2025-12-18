@@ -6,74 +6,153 @@
     <title>Аукцион - Новости</title>
     <link href="../library/bootstrap.min.css" rel="stylesheet">
     <script src="../library/bootstrap.bundle.min.js" defer></script>
+    <link href="../style/news.css" rel="stylesheet" type="text/css"/>
     <script src="../library/jquery-3.7.1.min.js" defer></script>
     <link href="../style/main.css" rel="stylesheet" type="text/css"/>
     <script src="../js/news.js" defer></script>
     <link rel="shortcut icon" href="#" />
 </head>
 <body>
-<!-- Навигация -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-        <span class="navbar-brand">Аукцион</span>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link active" href="main.html">Главная</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="auctions.html">Аукционы</a>
-                </li>
-                <li id="user-cabinet-item" class="nav-item hidden">
-                    <a class="nav-link" href="user-cabinet.html">Личный кабинет</a>
-                </li>
-            </ul>
-            <div class="navbar-nav align-items-center">
-                <span id="server-time" class="navbar-text me-3"></span>
-                <span id="user-info" class="navbar-text me-3"></span>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <span class="navbar-brand">Аукцион</span>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="main.html">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="auctions.html">Аукционы</a>
+                    </li>
+                    <li id="user-cabinet-item" class="nav-item hidden">
+                        <a class="nav-link" href="user-cabinet.html">Личный кабинет</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="news.html">Новости</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav align-items-center">
+                    <span id="server-time" class="navbar-text me-3"></span>
+                    <span id="user-info" class="navbar-text me-3"></span>
 
-                <!-- Кнопка Войти -->
-                <div id="login-item" class="nav-item">
-                    <a href="auth.html" class="btn btn-outline-light btn-sm me-2">Войти</a>
+                    <div id="login-item" class="nav-item">
+                        <a href="auth.html" class="btn btn-outline-light btn-sm me-2">Войти</a>
+                    </div>
+
+                    <div id="logout-item" class="nav-item hidden">
+                        <button id="logout-btn" class="btn btn-outline-light btn-sm">Выйти</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4" id="news_block">
+        <h2 class="mb-4">Новости аукциона</h2>
+        <div id="news-list">
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="createNewsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавление новости</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
-                <!-- Кнопка Выйти -->
-                <div id="logout-item" class="nav-item hidden">
-                    <button id="logout-btn" class="btn btn-outline-light btn-sm">Выйти</button>
+                <div class="modal-body">
+                    <form id="create_news_form">
+
+                        <div class="mb-3">
+                            <label class="form-label">Заголовок</label>
+                            <input type="text" class="form-control" id="news_title" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Текст новости</label>
+                            <textarea class="form-control" id="news_content" rows="4" required></textarea>
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success" id="save_news">Сохранить</button>
                 </div>
             </div>
         </div>
     </div>
-</nav>
 
-<div class="container mt-4">
-    <h2 class="mb-4">Новости аукциона</h2>
-    <div id="news-list">
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Добро пожаловать на наш аукцион!</h5>
-                <p class="card-text">Мы рады приветствовать вас на нашей платформе. Здесь вы найдете уникальные лоты и сможете принять участие в увлекательных торгах.</p>
-                <small class="text-muted">Опубликовано: 2024-01-01</small>
-            </div>
-        </div>
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Новые правила участия</h5>
-                <p class="card-text">Ознакомьтесь с обновленными правилами участия в аукционах на нашей платформе.</p>
-                <small class="text-muted">Опубликовано: 2024-01-15</small>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Скоро новые аукционы</h5>
-                <p class="card-text">В ближайшее время ожидаются новые интересные лоты. Следите за обновлениями!</p>
-                <small class="text-muted">Опубликовано: 2024-01-20</small>
+    <div class="modal fade" id="readNews" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="readNewsTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div id="readNewsContent" style="white-space: pre-line;"></div>
+                    <p class="text-muted mb-2" id="newsCreator"></p>
+                    <p class="text-muted mb-2" id="newsDate"></p>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    <div class="modal fade" id="editNewsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактирование новости</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="edit_news_form">
+
+                        <div class="mb-3">
+                            <label class="form-label">Заголовок</label>
+                            <input type="text" class="form-control" id="new_news_title" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Текст новости</label>
+                            <textarea class="form-control" id="new_news_content" rows="4" required></textarea>
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success" id="save_edit_news">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p>Вы действительно хотите удалить эту новость?</p>
+                    <button type="button" class="btn btn-success" id="deleteButton">Да</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>        
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

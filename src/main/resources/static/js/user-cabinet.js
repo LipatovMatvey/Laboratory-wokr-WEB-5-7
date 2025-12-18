@@ -1,30 +1,25 @@
-/**
- * Основная функция инициализации личного кабинета.
- * Настраивает обработчики событий и загружает данные пользователя.
- */
-$(document).ready(function() {
-    checkAuth();
-    
-    $('#logout-btn').on('click', function() {
-        logout();
-    });
-    
-    loadUserData();
-    
-    $('#user-data-form').on('submit', function(e) {
-        e.preventDefault();
-        updateUserData();
-    });
-    
-    $('#avatar-upload').on('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            uploadAvatar(e.target.files[0]);
-        }
-    });
-    
-    loadUserBids();
-    loadWonLots();
+checkAuth();
+
+$('#logout-btn').on('click', function() {
+    logout();
 });
+
+loadUserData();
+
+$('#user-data-form').on('submit', function(e) {
+    e.preventDefault();
+    updateUserData();
+});
+
+$('#avatar-upload').on('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+        uploadAvatar(e.target.files[0]);
+    }
+});
+
+loadUserBids();
+loadWonLots();
+
 
 /**
  * Запрашивает у сервера текущее московское время
@@ -36,7 +31,7 @@ function updateServerTime() {
         url: "/api/time",
         method: "GET",
         success: function (data) {
-            $("#server-time").text("Точное московское время: "+data.time);
+            $("#server-time").text("Точное московское время: " + data.time);
         }
     });
 }
@@ -81,13 +76,9 @@ function checkAuth() {
         method: "GET",
         success: function(response) {
             updateNavigation(response);
-            
             if (response.authenticated && response.role === 'admin') {
                 $('#admin-tab').show();
-                
-                if (typeof initAdminPanel === 'function') {
-                    initAdminPanel();
-                }
+                initAdminPanel();
             }
         },
         error: function(xhr, status, error) {
@@ -99,7 +90,7 @@ function checkAuth() {
 /**
  * Обновляет навигационную панель на основе данных пользователя.
  * Скрывает/показывает элементы интерфейса в зависимости от роли.
- * @param {object} response - Данные пользователя с сервера
+ * @param {object} response Данные пользователя с сервера
  */
 function updateNavigation(response) {
     if (response.authenticated) {
@@ -122,10 +113,6 @@ function updateNavigation(response) {
         
         if (response.role === 'admin') {
             $('#admin-tab').show();
-            $('#admin-panel-item').addClass('hidden');
-        } else {
-            $('#admin-tab').hide();
-            $('#admin-panel-item').addClass('hidden');
         }
     } else {
         window.location.href = 'auth.html';
