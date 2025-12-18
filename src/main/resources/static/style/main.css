@@ -2,6 +2,21 @@
     display: none !important;
 }
 
+#newsCreator {
+    padding-top: 10px;
+}
+
+#newsBlock {
+    height: 800px;
+    overflow-y: auto;
+    padding-right: 10px
+}
+
+#newsContent {
+    max-height: 100px;
+    overflow: hidden;
+}
+
 .page-content {
     min-height: 60vh;
 }

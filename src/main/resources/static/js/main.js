@@ -301,3 +301,35 @@ function isAuctionNew(createdAt) {
     const diffHours = (now - created) / (1000 * 60 * 60);
     return diffHours < 24;
 }
+
+/**
+ * Функция подгружает новости в ленту новостей
+ */
+function loadNewsFeed() {
+    $.ajax({
+        url: "/api/news",
+        method: "GET",
+        success: function (news) {
+            let html = '';
+            news.forEach( news => {
+                const serverDate = new Date(news.creatingDate);
+                const serverDateFormat = String(serverDate.getDate()).padStart(2, '0') + 
+                    "." + String(serverDate.getMonth() + 1).padStart(2, '0') + "." +
+                    serverDate.getFullYear();
+                html += `
+                    <div class="news-item mb-3 pb-3 border-bottom">
+                        <h6 class="news-title">${news.title}</h6>
+                        <p class="news-content small text-muted" id="newsContent">${news.content}</p>
+                        <small class="text-muted">${news.createdBy}</small>
+                        <small class="text-muted">${serverDateFormat}</small>
+                    </div>
+                `;
+            });
+           $("#news-feed").append(html); 
+        },
+        error: function () {
+            showUserNotification("Ошибка связи с сервером", "danger");
+        }
+    });
+    
+}
