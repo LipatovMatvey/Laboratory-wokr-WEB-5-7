@@ -1,10 +1,10 @@
-package ru.AuctionApp.Backend.Service;
+package ru.AuctionApp.Backend.Services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.AuctionApp.Backend.DTO.NewsDTO;
 import ru.AuctionApp.Backend.Entity.News;
-import ru.AuctionApp.Backend.Repository.NewsRepository;
+import ru.AuctionApp.Backend.Repositories.NewsRepository;
 
 import java.util.List;
 

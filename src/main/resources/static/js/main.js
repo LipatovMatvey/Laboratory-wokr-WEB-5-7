@@ -1,5 +1,4 @@
 $(document).ready(function() {
-    // Проверяем авторизацию при загрузке страницы
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (!user.authenticated) {
         updateNavigation({ authenticated: false });
@@ -10,6 +9,7 @@ $(document).ready(function() {
         logout();
     });
     loadFeaturedAuctions();
+    loadNewsFeed();
 });
 
 /**

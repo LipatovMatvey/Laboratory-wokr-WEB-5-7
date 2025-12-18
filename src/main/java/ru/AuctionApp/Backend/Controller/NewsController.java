@@ -9,9 +9,9 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.AuctionApp.Backend.DTO.NewsDTO;
 import ru.AuctionApp.Backend.Entity.News;
 import ru.AuctionApp.Backend.Entity.User;
-import ru.AuctionApp.Backend.Repository.NewsRepository;
+import ru.AuctionApp.Backend.Repositories.NewsRepository;
 import ru.AuctionApp.Backend.Repositories.UsersRepository;
-import ru.AuctionApp.Backend.Service.NewsService;
+import ru.AuctionApp.Backend.Services.NewsService;
 
 import java.time.LocalDate;
 import java.util.List;

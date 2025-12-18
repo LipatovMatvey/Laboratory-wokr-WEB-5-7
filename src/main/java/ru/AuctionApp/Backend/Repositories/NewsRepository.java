@@ -1,4 +1,4 @@
-package ru.AuctionApp.Backend.Repository;
+package ru.AuctionApp.Backend.Repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.AuctionApp.Backend.Entity.News;
