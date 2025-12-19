@@ -81,9 +81,12 @@ function setupEventHandlers() {
  * Инициализирует админ-панель
  */
 function initAdminPanel() {
-    console.log('Инициализация админ-панели');
-    loadAllUsers();
-    updateAdminPanelHeader();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.role === 'admin'){
+        console.log('Инициализация админ-панели');
+        loadAllUsers();
+        updateAdminPanelHeader();
+    }
 }
 
 /**
@@ -113,43 +116,46 @@ function updateAdminPanelHeader() {
  * Загружает всех пользователей с сервера
  */
 function loadAllUsers() {
-    $('#users-table-body').html(`
-        <tr>
-            <td colspan="8" class="text-center text-muted py-4">
-                <div class="spinner-border spinner-border-sm me-2" role="status">
-                    <span class="visually-hidden">Загрузка...</span>
-                </div>
-                Загрузка пользователей...
-            </td>
-        </tr>
-    `);
-    $.ajax({
-        url: "/api/users/all",
-        method: "GET",
-        success: function(users) {
-            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-            allUsers = users.filter(user => user.id !== currentUser.id);
-            renderUsersTable();
-            setupPagination();
-            updateAdminPanelHeader();
-        },
-        error: function(xhr) {
-            const errorMsg = xhr.responseJSON?.error || 'Не удалось загрузить пользователей';
-            
-            $('#users-table-body').html(`
-                <tr>
-                    <td colspan="8" class="text-center text-danger py-4">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        ${errorMsg}
-                        <br>
-                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Перезагрузить страницу
-                        </button>
-                    </td>
-                </tr>
-            `);
-        }
-    });
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.role === 'admin'){
+        $('#users-table-body').html(`
+            <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    Загрузка пользователей...
+                </td>
+            </tr>
+        `);
+        $.ajax({
+            url: "/api/users/all",
+            method: "GET",
+            success: function(users) {
+                const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                allUsers = users.filter(user => user.id !== currentUser.id);
+                renderUsersTable();
+                setupPagination();
+                updateAdminPanelHeader();
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON?.error || 'Не удалось загрузить пользователей';
+
+                $('#users-table-body').html(`
+                    <tr>
+                        <td colspan="8" class="text-center text-danger py-4">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            ${errorMsg}
+                            <br>
+                            <button class="btn btn-sm btn-outline-secondary mt-2" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Перезагрузить страницу
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            }
+        });
+    }
 }
 
 /**
