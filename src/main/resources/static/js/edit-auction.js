@@ -4,7 +4,7 @@ $(document).ready(function() {
     if (auctionId) {
         loadAuctionData(auctionId);
     } else {
-        showError('Аукцион не найден');
+        showUserNotification('Аукцион не найден', 'danger');
         setTimeout(() => window.location.href = 'auctions.html', 2000);
     }
     $('#edit-auction-form').on('submit', handleFormSubmit);
@@ -15,7 +15,8 @@ $(document).ready(function() {
 });
 
 /**
- * Получает ID аукциона из URL
+ * Получает ID аукциона из параметров URL
+ * @returns {string|null} ID аукциона или null, если не найден
  */
 function getAuctionIdFromUrl() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -23,18 +24,19 @@ function getAuctionIdFromUrl() {
 }
 
 /**
- * Проверяет авторизацию пользователя
+ * Проверяет авторизацию пользователя и права доступа
+ * @returns {void}
  */
 function checkAuth() {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
-        showError('Требуется авторизация');
+        showUserNotification('Требуется авторизация', 'warning');
         setTimeout(() => window.location.href = 'auth.html', 2000);
         return;
     }
     const user = JSON.parse(userStr);
     if (!user.authenticated) {
-        showError('Требуется авторизация');
+        showUserNotification('Требуется авторизация', 'warning');
         setTimeout(() => window.location.href = 'auth.html', 2000);
         return;
     }
@@ -44,7 +46,9 @@ function checkAuth() {
 }
 
 /**
- * Загружает данные аукциона
+ * Загружает данные аукциона с сервера
+ * @param {string} auctionId - ID аукциона
+ * @returns {void}
  */
 function loadAuctionData(auctionId) {
     $.ajax({
@@ -55,7 +59,7 @@ function loadAuctionData(auctionId) {
         },
         error: function(xhr) {
             const error = xhr.responseJSON?.error || 'Не удалось загрузить данные аукциона';
-            showError(error);
+            showUserNotification(error, 'danger');
             setTimeout(() => window.location.href = 'auctions.html', 2000);
         }
     });
@@ -63,9 +67,10 @@ function loadAuctionData(auctionId) {
 
 /**
  * Заполняет форму данными аукциона
+ * @param {Object} auction - Объект аукциона
+ * @returns {void}
  */
 function populateForm(auction) {
-    // Скрываем сообщение о загрузке и показываем форму
     $('#loading-message').addClass('hidden');
     $('#edit-auction-form').removeClass('hidden');    
     $('#title').val(auction.title || '');
@@ -85,12 +90,14 @@ function populateForm(auction) {
     const now = new Date();
     const startTime = new Date(auction.startTime);
     if (now > startTime) {
-        showWarning('Аукцион уже начался. Некоторые изменения могут быть ограничены.');
+        showUserNotification('Аукцион уже начался. Некоторые изменения могут быть ограничены.', 'warning');
     }
 }
 
 /**
- * Обрабатывает отправку формы
+ * Обрабатывает отправку формы редактирования
+ * @param {Event} e - Событие отправки формы
+ * @returns {void}
  */
 function handleFormSubmit(e) {
     e.preventDefault();
@@ -103,7 +110,8 @@ function handleFormSubmit(e) {
 }
 
 /**
- * Валидирует форму
+ * Валидирует все поля формы
+ * @returns {boolean} true если форма валидна, false если есть ошибки
  */
 function validateForm() {
     let isValid = true;
@@ -126,7 +134,9 @@ function validateForm() {
 }
 
 /**
- * Валидирует одно поле
+ * Валидирует одно поле формы
+ * @param {jQuery} $field - jQuery объект поля для валидации
+ * @returns {boolean} true если поле валидно, false если есть ошибки
  */
 function validateField($field) {
     const value = $field.val();
@@ -156,7 +166,8 @@ function validateField($field) {
 }
 
 /**
- * Получает данные из формы
+ * Собирает данные из формы для отправки на сервер
+ * @returns {Object} Объект с обновленными данными аукциона
  */
 function getFormData() {
     const updates = {
@@ -174,7 +185,10 @@ function getFormData() {
 }
 
 /**
- * Сохраняет изменения на сервере
+ * Сохраняет изменения аукциона на сервере
+ * @param {string} auctionId - ID аукциона
+ * @param {Object} updates - Объект с обновленными данными
+ * @returns {void}
  */
 function saveChanges(auctionId, updates) {
     $('#save-btn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Сохранение...');
@@ -184,7 +198,7 @@ function saveChanges(auctionId, updates) {
         contentType: 'application/json',
         data: JSON.stringify(updates),
         success: function(response) {
-            showSuccess('Изменения успешно сохранены!');
+            showUserNotification('✅ Изменения успешно сохранены!', 'success');
             setTimeout(() => {
                 window.location.href = 'auctions.html';
             }, 1500);
@@ -192,22 +206,30 @@ function saveChanges(auctionId, updates) {
         error: function(xhr) {
             $('#save-btn').prop('disabled', false).html('<i class="bi bi-check-circle me-1"></i>Сохранить изменения');
             const error = xhr.responseJSON?.error || 'Ошибка при сохранении изменений';
-            showError(error);
+            showUserNotification('❌ ' + error, 'danger');
         }
     });
 }
 
 /**
- * Отменяет редактирование
+ * Отменяет редактирование аукциона
+ * @returns {void}
  */
 function cancelEdit() {
-    if (confirm('Все несохраненные изменения будут потеряны. Продолжить?')) {
-        window.location.href = 'auctions.html';
-    }
+    showSimpleConfirmDialog(
+        'Отмена редактирования',
+        'Все несохраненные изменения будут потеряны. Продолжить?',
+        function() {
+            window.location.href = 'auctions.html';
+        }
+    );
 }
 
 /**
- * Показывает ошибку поля
+ * Показывает ошибку для конкретного поля формы
+ * @param {jQuery} $field - jQuery объект поля
+ * @param {string} message - Сообщение об ошибке
+ * @returns {void}
  */
 function showFieldError($field, message) {
     $field.addClass('is-invalid');
@@ -221,7 +243,9 @@ function showFieldError($field, message) {
 }
 
 /**
- * Очищает ошибку поля
+ * Очищает ошибку у поля формы
+ * @param {jQuery} $field - jQuery объект поля
+ * @returns {void}
  */
 function clearFieldError($field) {
     $field.removeClass('is-invalid');
@@ -229,7 +253,9 @@ function clearFieldError($field) {
 }
 
 /**
- * Форматирует цену
+ * Форматирует числовое значение цены в строку с разделителями
+ * @param {number} price - Цена для форматирования
+ * @returns {string} Отформатированная цена
  */
 function formatPrice(price) {
     return parseFloat(price).toLocaleString('ru-RU', {
@@ -239,33 +265,123 @@ function formatPrice(price) {
 }
 
 /**
- * Показывает уведомление об ошибке
+ * Показывает уведомление пользователю в правом верхнем углу.
+ * @param {string} message - Текст сообщения
+ * @param {string} type - Тип уведомления (success, danger, warning, info)
+ * @returns {void}
  */
-function showError(message) {
-    $('#error-message').text(message);
-    $('#errorModal').modal('show');
-}
-
-/**
- * Показывает предупреждение
- */
-function showWarning(message) {
-    $('#edit-auction-form').prepend(`
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>${message}
+function showUserNotification(message, type = 'info') {
+    $('.user-notification').remove();
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'danger' ? 'alert-danger' : 
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
+    const $notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show user-notification" role="alert" 
+             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;">
+            ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `);
+    $('body').append($notification);
+    setTimeout(() => {
+        $notification.fadeOut(300, function () {
+            $(this).remove();
+        });
+    }, 3000);
 }
 
 /**
- * Показывает уведомление об успехе
+ * Показывает диалог подтверждения с использованием Bootstrap Modal
+ * @param {string} title - Заголовок диалога
+ * @param {string} message - Сообщение для отображения
+ * @param {function} onConfirm - Функция обратного вызова при подтверждении
+ * @returns {void}
  */
-function showSuccess(message) {
-    $('#edit-auction-form').prepend(`
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-2"></i>${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+function showConfirmDialog(title, message, onConfirm) {
+    $('#confirmModal').remove();
+    $('.modal-backdrop').remove();
+    const modalHtml = `
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmModalLabel">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" id="confirmOkBtn">Подтвердить</button>
+                    </div>
+                </div>
+            </div>
         </div>
-    `);
+    `;
+    $('body').append(modalHtml);
+    const modalElement = document.getElementById('confirmModal');
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();    
+    $('#confirmOkBtn').off('click').on('click', function() {
+        modal.hide();
+        if (onConfirm && typeof onConfirm === 'function') {
+            onConfirm();
+        }
+    });    
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        $(this).remove();
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+    });
+}
+
+/**
+ * Показывает упрощенный диалог подтверждения с желтым заголовком
+ * @param {string} title - Заголовок диалога
+ * @param {string} message - Сообщение для отображения
+ * @param {function} onConfirm - Функция обратного вызова при подтверждении
+ * @returns {void}
+ */
+function showSimpleConfirmDialog(title, message, onConfirm) {
+    if ($('#simpleConfirmModal').length) {
+        $('#simpleConfirmModal').remove();
+    }
+    const modalHtml = `
+        <div class="modal fade" id="simpleConfirmModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning">
+                        <h5 class="modal-title text-white">${title}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-warning" id="simpleConfirmBtn">Да, продолжить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    $('body').append(modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('simpleConfirmModal'));
+    modal.show();
+    $('#simpleConfirmBtn').off('click').on('click', function() {
+        modal.hide();
+        setTimeout(() => {
+            $('#simpleConfirmModal').remove();
+            $('.modal-backdrop').remove();
+            if (onConfirm && typeof onConfirm === 'function') {
+                onConfirm();
+            }
+        }, 300);
+    });
+    $('#simpleConfirmModal').on('hidden.bs.modal', function() {
+        $(this).remove();
+        $('.modal-backdrop').remove();
+    });
 }

@@ -1,11 +1,8 @@
 let currentRole = null;
-
 checkAuth();
-
 $('#logout-btn').on('click', function() {
     logout();
 });
-
 loadNews();
 
 /**
@@ -22,7 +19,6 @@ function updateServerTime() {
         }
     });
 }
-
 setInterval(updateServerTime, 1000);
 updateServerTime();
 
@@ -52,6 +48,7 @@ function updateNavigation(response) {
     if (response.authenticated) {
         $('#user-info').text(response.fullName || 'Пользователь');
         $('#user-role').text(getRoleDisplayName(response.role));
+        $('#user-visits').text("Количество посещений " + `${response.visits || 0}`);
         $('#login-item').addClass('hidden');
         $('#logout-item').removeClass('hidden');
         $('#user-cabinet-item').removeClass('hidden');
@@ -66,6 +63,7 @@ function updateNavigation(response) {
     } else {
         $('#user-info').text('');
         $('#user-role').text('Гость');
+        $('#user-visits').html('');
         $('#login-item').removeClass('hidden');
         $('#logout-item').addClass('hidden');
         $('#user-cabinet-item').addClass('hidden');
@@ -80,16 +78,12 @@ $('#news_block').on('click', '#add_button', () => {
 });
 
 $('#save_news').on('click', () => {
-
     const title = $('#news_title').val().trim();
     const content = $('#news_content').val().trim();
-    
     if (!validationNews(title, content)) return;
-
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
-
     $.ajax({
         url: "/api/news",
         method: "POST",
@@ -97,7 +91,6 @@ $('#save_news').on('click', () => {
         contentType: false,
         data: formData,
         success: function () {
-
             const modal = bootstrap.Modal.getInstance(document.getElementById('createNewsModal'));
             modal.hide();
 
@@ -112,7 +105,6 @@ $('#save_news').on('click', () => {
         }
     });
 });
-
 
 /**
  * Возвращает читаемое название роли
@@ -177,7 +169,6 @@ function loadNews() {
  */
 function renderNews(news) {
     const $container = $('#news-list');
-    
     if (!news || news.length === 0) {
         $container.html(`
             <div class="col-12 text-center">
@@ -206,7 +197,6 @@ function renderNews(news) {
                                 <p class="card-text">
                                     <small class="text-muted">Автор: ${item.createdBy}</small>
                                 </p>
-
                                 <button class="btn btn-outline-primary btn-sm read-more-btn" data-news-id="${item.id}">
                                     Читать подробнее
                                 </button>
@@ -239,7 +229,6 @@ function renderNews(news) {
                                 <p class="card-text">
                                     <small class="text-muted">Автор: ${item.createdBy}</small>
                                 </p>
-
                                 <button class="btn btn-outline-primary btn-sm read-more-btn" data-news-id="${item.id}">
                                     Читать подробнее
                                 </button>
@@ -250,9 +239,7 @@ function renderNews(news) {
             `;
         }    
     });
-    
     $container.html(html);
-    
     $('.read-more-btn').on('click', function() {
         const newsId = $(this).data('news-id');
         showNewsDetail(newsId);
@@ -286,14 +273,11 @@ $(document).on('click' , '.edit-btn', function () {
 function updateNews() {
     const title = $('#new_news_title').val().trim();
     const content = $('#new_news_content').val().trim();
-    
     if (!validationNews(title, content)) return;
-   
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
     formData.append("id", newsId);
-    
     $.ajax({
         url: "/api/news/update",
         method: "POST",
@@ -303,9 +287,7 @@ function updateNews() {
         success: function () {
             const modal = bootstrap.Modal.getInstance(document.getElementById('editNewsModal'));
             modal.hide();
-
             $('#edit_news_form')[0].reset();
-
             loadNews();
             renderNews(allNews);
             showUserNotification("Новость успешно изменена", "success");
@@ -389,11 +371,9 @@ function showNewsDetail(newsId) {
  */
 function showUserNotification(message, type = 'info') {
     $('.user-notification').remove();
-    
     const alertClass = type === 'success' ? 'alert-success' : 
                       type === 'danger' ? 'alert-danger' : 
                       type === 'warning' ? 'alert-warning' : 'alert-info';
-    
     const $notification = $(`
         <div class="alert ${alertClass} alert-dismissible fade show user-notification" role="alert" 
              style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;">
@@ -401,9 +381,7 @@ function showUserNotification(message, type = 'info') {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `);
-    
     $('body').append($notification);
-    
     setTimeout(() => {
         $notification.fadeOut(300, function () {
         $(this).remove();
@@ -422,16 +400,13 @@ function validationNews(title, content) {
         showUserNotification("Заполните заголовок и текст новости" , "warning");
         return false;
     }
-    
     if (title.length > 65) {
         showUserNotification("Заголовок не должен превышать 65 символов" , "danger");
         return false;
     }
-    
     if (content.length > 5000) {
         showUserNotification("Текст новости не должен превышать 5000 символов" , "danger");
         return false;
     }
-    
     return true;
 }

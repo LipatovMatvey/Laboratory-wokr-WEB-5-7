@@ -20,11 +20,22 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/news")
 public class NewsController {
-    @Autowired
-    NewsService newsService;
-    @Autowired
-    UsersRepository userRepository;
 
+    /**
+     * Сервис для работы с новостями
+     */
+    @Autowired
+    private NewsService newsService;
+
+    /**
+     * Репозиторий для работы с пользователями
+     */
+    @Autowired
+    private UsersRepository userRepository;
+
+    /**
+     * Репозиторий для прямого доступа к данным новостей
+     */
     @Autowired
     private NewsRepository newsRepository;
 
@@ -53,20 +64,15 @@ public class NewsController {
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-
         if (newsService.alreadyExistsTitle(title)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Новость с таким заголовком уже существует");
         }
-
         if (newsService.alreadyExistsContent(content)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Новость с таким текстом уже существует");
         }
-
         validationNews(title, content);
-
         return newsService.addNews(title, content, LocalDate.now().toString(), user.getFullName());
     }
 
@@ -80,6 +86,14 @@ public class NewsController {
         return newsService.getNews(newsId);
     }
 
+    /**
+     * Обновляет существующую новость
+     * @param title Новый заголовок новости
+     * @param content Новое содержимое новости
+     * @param id Идентификатор обновляемой новости
+     * @param session HTTP-сессия для проверки прав доступа
+     * @return Обновленный список всех новостей после изменения
+     */
     @PostMapping("/update")
     public List<NewsDTO> updateNews(@RequestParam("title") String title,
                                     @RequestParam("content") String content,
@@ -90,23 +104,24 @@ public class NewsController {
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-
         if (!user.getRole().equals("admin") && !user.getRole().equals("moder")) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         }
-
         if (newsService.alreadyExistsTitle(title) && newsService.alreadyExistsContent(content)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Такая новость уже существует");
         }
-
         validationNews(title, content);
-
         return newsService.updateNews(id, title, content);
     }
 
+    /**
+     * Удаляет новость по её идентификатору.
+     * @param id Идентификатор удаляемой новости
+     * @param session HTTP-сессия для проверки прав доступа
+     * @return ResponseEntity с результатом операции
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteNews(@PathVariable Long id, HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
@@ -114,19 +129,16 @@ public class NewsController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Не авторизован"));
         }
-
         User user = userRepository.findById(userId).orElse(null);
         if (user == null || (!"admin".equals(user.getRole()) && !"moder".equals(user.getRole()))) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Доступ запрещен"));
         }
-
         News news = newsRepository.findById(id).orElse(null);
         if (news == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", "Такой новости не существует"));
         }
-
         newsRepository.delete(news);
         return ResponseEntity.ok(Map.of("message", "Новость успешно удалена"));
     }
@@ -137,15 +149,12 @@ public class NewsController {
      * @param title Заголовок
      */
     public void validationNews(String title, String content) {
-
         if (title.isEmpty() || content.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Заголовок и текст новости не могут быть пустыми");
         }
-
         if (title.length() > 65) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Максимальная длина заголовка - 65 символов");
         }
-
         if (content.length() > 5000) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Максимальная длина текста - 5000 символов");
         }

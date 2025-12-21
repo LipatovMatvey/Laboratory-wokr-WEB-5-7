@@ -18,6 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class ServerTimeController {
+
     /**
      * Возвращает текущее серверное время в формате HH:mm:ss.
      * @return карта с текущим временем сервера

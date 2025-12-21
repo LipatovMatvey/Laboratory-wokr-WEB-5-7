@@ -345,24 +345,18 @@ public class AuctionController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Не авторизован"));
             }
-
             User currentUser = usersRepository.findById(userId).orElse(null);
             if (currentUser == null || !"admin".equals(currentUser.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("error", "Только администраторы могут удалять аукционы"));
             }
-
             Auction auction = auctionRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Аукцион не найден"));
-
-            // Проверяем, что аукцион завершен
             List<String> completedStatuses = List.of("FINISHED", "EXPIRED", "CANCELLED");
             if (!completedStatuses.contains(auction.getStatus())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Можно удалять только завершенные аукционы"));
             }
-
-            // Удаляем аукцион
             auctionRepository.delete(auction);
 
             return ResponseEntity.ok(Map.of(
@@ -370,7 +364,6 @@ public class AuctionController {
                     "message", "Аукцион успешно удален",
                     "deletedAuction", new AuctionDTO(auction)
             ));
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

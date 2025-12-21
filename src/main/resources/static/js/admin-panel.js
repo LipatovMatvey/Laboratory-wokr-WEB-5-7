@@ -48,7 +48,13 @@ function setupEventHandlers() {
     });
     $(document).on('click', '#delete-user-btn', function(e) {
         e.preventDefault();
-        deleteUser();
+        showConfirmDialog(
+            'Удаление пользователя',
+            'Вы уверены, что хотите удалить этого пользователя?',
+            function() {
+                deleteUser();
+            }
+        );
     });
     $(document).on('change', '#new-user-avatar', function(e) {
         if (e.target.files && e.target.files[0]) {
@@ -237,7 +243,6 @@ function renderUsersTable() {
         `;
     });
     $tbody.html(html);
-
 }
 
 /**
@@ -317,9 +322,19 @@ function getRoleIcon(role) {
  * Блокирует или разблокирует пользователя
  */
 function toggleUserBan(userId, banned, $row) {
-    if (!confirm(banned ? 'Заблокировать пользователя?' : 'Разблокировать пользователя?')) {
-        return;
-    }
+    showConfirmDialog(
+        banned ? 'Блокировка пользователя' : 'Разблокировка пользователя',
+        banned ? 'Заблокировать пользователя?' : 'Разблокировать пользователя?',
+        function() {
+            performBanUser(userId, banned);
+        }
+    );
+}
+
+/**
+ * Выполняет блокировку/разблокировку пользователя
+ */
+function performBanUser(userId, banned) {
     $.ajax({
         url: `/api/users/${userId}/ban`,
         method: "POST",
@@ -331,44 +346,82 @@ function toggleUserBan(userId, banned, $row) {
                 allUsers[index].bannedStatus = banned;
             }
             renderUsersTable();
-            showNotification(
+            showUserNotification(
                 banned ? '✅ Пользователь заблокирован' : '✅ Пользователь разблокирован',
                 'success'
             );
         },
         error: function(xhr) {
             const response = xhr.responseJSON;
-            showNotification('❌ Ошибка: ' + (response?.error || 'Не удалось изменить статус'), 'danger');
+            showUserNotification('❌ Ошибка: ' + (response?.error || 'Не удалось изменить статус'), 'danger');
         }
     });
 }
 
 /**
- * Показывает уведомление
+ * Показывает уведомление пользователю в правом верхнем углу.
+ * @param {string} message - Текст сообщения
+ * @param {string} type - Тип уведомления (success, danger, warning, info)
  */
-function showNotification(message, type = 'info') {
-    $('.notification-toast').remove();
+function showUserNotification(message, type = 'info') {
+    $('.user-notification').remove();
     const alertClass = type === 'success' ? 'alert-success' : 
                       type === 'danger' ? 'alert-danger' : 
                       type === 'warning' ? 'alert-warning' : 'alert-info';
     
-    const $toast = $(`
-        <div class="notification-toast position-fixed top-0 end-0 m-3" style="z-index: 9999;">
-            <div class="toast show" role="alert">
-                <div class="toast-header ${alertClass} text-white">
-                    <strong class="me-auto">Уведомление</strong>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
+    const $notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show user-notification" role="alert" 
+             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    $('body').append($notification);
+    setTimeout(() => {
+        $notification.fadeOut(300, function () {
+            $(this).remove();
+        });
+    }, 3000);
+}
+
+/**
+ * Показывает диалог подтверждения
+ * @param {string} title - Заголовок диалога
+ * @param {string} message - Сообщение
+ * @param {function} onConfirm - Функция при подтверждении
+ */
+function showConfirmDialog(title, message, onConfirm) {
+    const modalHtml = `
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" id="confirmOkBtn">Подтвердить</button>
+                    </div>
                 </div>
             </div>
         </div>
-    `);
-    $('body').append($toast);
-    setTimeout(() => {
-        $toast.remove();
-    }, 4000);
+    `;
+    $('body').append(modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+    $('#confirmOkBtn').on('click', function() {
+        modal.hide();
+        $('.modal-backdrop').remove();
+        $('#confirmModal').remove();
+        onConfirm();
+    });
+    $('#confirmModal').on('hidden.bs.modal', function() {
+        $(this).remove();
+    });
 }
 
 /**
@@ -377,7 +430,7 @@ function showNotification(message, type = 'info') {
 function openEditModal(userId) {
     const user = allUsers.find(u => u.id == userId);
     if (!user) {
-        showNotification('Ошибка: Пользователь не найден', 'danger');
+        showUserNotification('Ошибка: Пользователь не найден', 'danger');
         return;
     }
     $('#edit-user-id').val(user.id);
@@ -447,28 +500,28 @@ function createNewUser() {
     const role = $('#new-user-role').val();
     const bannedStatus = $('#new-user-banned').prop('checked');
     if (!fullName) {
-        showNotification('Пожалуйста, введите имя пользователя', 'warning');
+        showUserNotification('Пожалуйста, введите имя пользователя', 'warning');
         $('#new-user-fullname').focus();
         return;
     }
     if (!email) {
-        showNotification('Пожалуйста, введите email', 'warning');
+        showUserNotification('Пожалуйста, введите email', 'warning');
         $('#new-user-email').focus();
         return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        showNotification('Пожалуйста, введите корректный email адрес', 'warning');
+        showUserNotification('Пожалуйста, введите корректный email адрес', 'warning');
         $('#new-user-email').focus();
         return;
     }
     if (!password) {
-        showNotification('Пожалуйста, введите пароль', 'warning');
+        showUserNotification('Пожалуйста, введите пароль', 'warning');
         $('#new-user-password').focus();
         return;
     }
     if (password.length < 6) {
-        showNotification('Пароль должен содержать минимум 6 символов', 'warning');
+        showUserNotification('Пароль должен содержать минимум 6 символов', 'warning');
         $('#new-user-password').focus();
         return;
     }
@@ -511,7 +564,7 @@ function createNewUser() {
             if (modal) {
                 modal.hide();
             }
-            showNotification('✅ Пользователь успешно создан!', 'success');
+            showUserNotification('✅ Пользователь успешно создан!', 'success');
         },
         error: function(xhr) {
             console.error('Ошибка при создании пользователя:', xhr);
@@ -531,7 +584,7 @@ function createNewUser() {
             } else if (xhr.status === 500) {
                 errorMsg = 'Внутренняя ошибка сервера';
             }
-            showNotification('❌ Ошибка: ' + errorMsg, 'danger');
+            showUserNotification('❌ Ошибка: ' + errorMsg, 'danger');
         },
         complete: function() {
             $saveBtn.prop('disabled', false).text(originalText);
@@ -545,7 +598,7 @@ function createNewUser() {
 function saveUserChanges() {
     const userId = $('#edit-user-id').val();
     if (!userId) {
-        showNotification('Ошибка: ID пользователя не указан', 'danger');
+        showUserNotification('Ошибка: ID пользователя не указан', 'danger');
         return;
     }
     const userData = {
@@ -556,25 +609,25 @@ function saveUserChanges() {
         bannedStatus: $('#edit-banned').prop('checked')
     };
     if (!userData.fullName) {
-        showNotification('Пожалуйста, введите имя пользователя', 'warning');
+        showUserNotification('Пожалуйста, введите имя пользователя', 'warning');
         $('#edit-fullname').focus();
         return;
     }
     if (!userData.email) {
-        showNotification('Пожалуйста, введите email', 'warning');
+        showUserNotification('Пожалуйста, введите email', 'warning');
         $('#edit-email').focus();
         return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
-        showNotification('Пожалуйста, введите корректный email адрес', 'warning');
+        showUserNotification('Пожалуйста, введите корректный email адрес', 'warning');
         $('#edit-email').focus();
         return;
     }
     const password = $('#edit-password').val();
     if (password && password.trim() !== '') {
         if (password.trim().length < 6) {
-            showNotification('Пароль должен содержать минимум 6 символов', 'warning');
+            showUserNotification('Пароль должен содержать минимум 6 символов', 'warning');
             $('#edit-password').focus();
             return;
         }
@@ -605,7 +658,7 @@ function sendUpdateRequest(userId, userData) {
                 modal.hide();
             }
             renderUsersTable();
-            showNotification('✅ Пользователь успешно обновлен!', 'success');
+            showUserNotification('✅ Пользователь успешно обновлен!', 'success');
         },
         error: function(xhr) {
             let errorMsg = 'Неизвестная ошибка';
@@ -613,7 +666,7 @@ function sendUpdateRequest(userId, userData) {
                 errorMsg = xhr.responseJSON.error;
             }
             
-            showNotification('❌ Ошибка: ' + errorMsg, 'danger');
+            showUserNotification('❌ Ошибка: ' + errorMsg, 'danger');
         },
         complete: function() {
             $saveBtn.prop('disabled', false).text(originalText);
@@ -628,10 +681,7 @@ function deleteUser() {
     const userId = $('#edit-user-id').val();
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
     if (currentUser.id == userId) {
-        showNotification('Ошибка: Нельзя удалить самого себя', 'danger');
-        return;
-    }
-    if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) {
+        showUserNotification('Ошибка: Нельзя удалить самого себя', 'danger');
         return;
     }
     $.ajax({
@@ -646,12 +696,12 @@ function deleteUser() {
             renderUsersTable();
             setupPagination();
             updateAdminPanelHeader();
-            showNotification('✅ Пользователь успешно удален!', 'success');
+            showUserNotification('✅ Пользователь успешно удален!', 'success');
         },
         error: function(xhr) {
             const response = xhr.responseJSON;
             const errorMsg = response?.error || 'Ошибка при удалении пользователя';
-            showNotification('❌ Ошибка: ' + errorMsg, 'danger');
+            showUserNotification('❌ Ошибка: ' + errorMsg, 'danger');
         }
     });
 }

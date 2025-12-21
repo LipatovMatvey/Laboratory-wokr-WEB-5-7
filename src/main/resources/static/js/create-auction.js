@@ -35,6 +35,9 @@ function initializeForm() {
     const endTime = new Date();
     endTime.setHours(endTime.getHours() + 24);
     $('#endTime').val(endTime.toISOString().slice(0, 16));
+    
+    // Устанавливаем изображение-заглушку при загрузке
+    $('#image-preview').attr('src', '/uploads/auctions/NOFOTO.jpg');
 }
 
 /**
@@ -42,7 +45,6 @@ function initializeForm() {
  */
 function setupEventListeners() {
     $('#image').on('change', handleImagePreview);
-    $('#remove-image-btn').on('click', removeImage);
     $('#cancel-btn').on('click', cancelCreation);
     $('#create-auction-form').on('submit', handleFormSubmit);
     $('input, textarea, select').on('input change', function() {
@@ -57,40 +59,36 @@ function handleImagePreview(e) {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
         if (file.size > 5 * 1024 * 1024) {
-            showError('Размер файла не должен превышать 5MB');
+            showUserNotification('Размер файла не должен превышать 5MB', 'danger');
             $('#image').val('');
             return;
         }
         if (!file.type.startsWith('image/')) {
-            showError('Пожалуйста, выберите файл изображения (JPG, PNG)');
+            showUserNotification('Пожалуйста, выберите файл изображения (JPG, PNG)', 'danger');
             $('#image').val('');
             return;
         }
         const reader = new FileReader();
         reader.onload = function(e) {
             $('#image-preview').attr('src', e.target.result);
-            $('#remove-image-btn').show();
         };
         reader.readAsDataURL(file);
+    } else {
+        $('#image-preview').attr('src', '/uploads/auctions/NOFOTO.jpg');
     }
-}
-
-/**
- * Удаляет выбранное изображение
- */
-function removeImage() {
-    $('#image').val('');
-    $('#image-preview').attr('src', 'https://via.placeholder.com/300x200?text=Предпросмотр');
-    $('#remove-image-btn').hide();
 }
 
 /**
  * Отменяет создание аукциона
  */
 function cancelCreation() {
-    if (confirm('Вы уверены, что хотите отменить создание аукциона? Все несохраненные данные будут потеряны.')) {
-        window.history.back();
-    }
+    showConfirmDialog(
+        'Отмена создания аукциона',
+        'Вы уверены, что хотите отменить создание аукциона? Все несохраненные данные будут потеряны.',
+        function() {
+            window.history.back();
+        }
+    );
 }
 
 /**
@@ -251,7 +249,7 @@ function createAuction() {
         },
         success: function(response) {
             console.log('Успешный ответ:', response);
-            showSuccess('✅ Аукцион успешно создан!');
+            showUserNotification('✅ Аукцион успешно создан!', 'success');
             setTimeout(function() {
                 window.location.href = 'user-cabinet.html';
             }, 1500);
@@ -265,7 +263,7 @@ function createAuction() {
             });
             const response = xhr.responseJSON;
             const errorMessage = response?.error || 'Не удалось создать аукцион. Попробуйте позже.';
-            showError('❌ ' + errorMessage);
+            showUserNotification('❌ ' + errorMessage, 'danger');
             if (xhr.status === 401) {
                 setTimeout(function() {
                     window.location.href = 'auth.html';
@@ -280,64 +278,66 @@ function createAuction() {
 }
 
 /**
- * Показывает уведомление об ошибке
- * @param {string} message - Сообщение об ошибке
+ * Показывает уведомление пользователю в правом верхнем углу.
+ * @param {string} message - Текст сообщения
+ * @param {string} type - Тип уведомления (success, danger, warning, info)
  */
-function showError(message) {
-    $('#error-message').text(message);
-    const errorToast = new bootstrap.Toast(document.getElementById('error-toast'));
-    $('#error-toast').show();
-    errorToast.show();
-    setTimeout(function() {
-        errorToast.hide();
-    }, 5000);
-}
-
-/**
- * Показывает уведомление об успехе
- * @param {string} message - Сообщение об успехе
- */
-function showSuccess(message) {
-    $('#success-message').text(message);
-    const successToast = new bootstrap.Toast(document.getElementById('success-toast'));
-    $('#success-toast').show();
-    successToast.show();
-    setTimeout(function() {
-        successToast.hide();
+function showUserNotification(message, type = 'info') {
+    $('.user-notification').remove();
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'danger' ? 'alert-danger' : 
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
+    const $notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show user-notification" role="alert" 
+             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    $('body').append($notification);
+    setTimeout(() => {
+        $notification.fadeOut(300, function () {
+            $(this).remove();
+        });
     }, 3000);
 }
 
 /**
- * Стили для индикатора загрузки (добавляются динамически)
+ * Показывает диалог подтверждения
+ * @param {string} title - Заголовок диалога
+ * @param {string} message - Сообщение
+ * @param {function} onConfirm - Функция при подтверждении
  */
-$(document).ready(function() {
-    $('head').append(`
-        <style>
-            .loading-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(255, 255, 255, 0.8);
-                z-index: 9999;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            .loading-overlay::after {
-                content: '';
-                width: 50px;
-                height: 50px;
-                border: 5px solid #f3f3f3;
-                border-top: 5px solid #0d6efd;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
-    `);
-});
+function showConfirmDialog(title, message, onConfirm) {
+    const modalHtml = `
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" id="confirmOkBtn">Подтвердить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    $('body').append(modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+    $('#confirmOkBtn').on('click', function() {
+        modal.hide();
+        $('.modal-backdrop').remove();
+        $('#confirmModal').remove();
+        onConfirm();
+    });
+    $('#confirmModal').on('hidden.bs.modal', function() {
+        $(this).remove();
+    });
+}

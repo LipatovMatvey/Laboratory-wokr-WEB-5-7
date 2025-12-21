@@ -25,6 +25,12 @@ import java.util.Map;
 public class AuthController {
 
     /**
+     *
+     */
+    @Autowired
+    private AuthService authService;
+
+    /**
      * Обработчик ошибки несуществующего пользователя
      * @param ex исключение, возникшее в процессе обработки запроса
      * @return карта с текстом ошибки
@@ -65,9 +71,6 @@ public class AuthController {
     public Map<String, String> handleUserExists(UserAlreadyExistsException ex) {
         return Map.of("error", ex.getMessage());
     }
-
-    @Autowired
-    private AuthService authService;
 
     /**
      * Регистрирует нового пользователя.

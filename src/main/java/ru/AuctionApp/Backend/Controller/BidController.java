@@ -13,11 +13,17 @@ import java.util.Map;
 @RequestMapping("/api/bids")
 public class BidController {
 
+    /**
+     * Сервис для выполнения бизнес-логики, связанной со ставками
+     */
     @Autowired
     private BidService bidService;
 
     /**
-     * Создает новую ставку
+     * Размещает новую ставку на аукционе
+     * @param bidData карта данных ставки, содержащая auctionId и amount
+     * @param session HTTP-сессия пользователя для получения идентификатора текущего пользователя
+     * @return ResponseEntity с результатом операции
      */
     @PostMapping
     public ResponseEntity<?> placeBid(
@@ -41,7 +47,9 @@ public class BidController {
     }
 
     /**
-     * Получает историю ставок для аукциона
+     * Получает все ставки для указанного аукциона
+     * @param auctionId идентификатор аукциона, для которого запрашиваются ставки
+     * @return ResponseEntity с данными о ставках
      */
     @GetMapping("/auction/{auctionId}")
     public ResponseEntity<?> getAuctionBids(@PathVariable Long auctionId) {
@@ -54,7 +62,10 @@ public class BidController {
     }
 
     /**
-     * Завершает аукцион и возвращает деньги проигравшим (для администратора)
+     * Завершает аукцион и выполняет возврат средств всем участникам, кроме победителя
+     * @param auctionId идентификатор аукциона, который необходимо завершить
+     * @param session HTTP-сессия для проверки авторизации пользователя
+     * @return ResponseEntity с результатом операции
      */
     @PostMapping("/finish-auction/{auctionId}")
     public ResponseEntity<?> finishAuction(

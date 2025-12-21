@@ -2,6 +2,11 @@
     display: none !important;
 }
 
+#button_block {
+    display: flex;
+    justify-content: flex-end;
+}
+
 #newsCreator {
     padding-top: 10px;
 }

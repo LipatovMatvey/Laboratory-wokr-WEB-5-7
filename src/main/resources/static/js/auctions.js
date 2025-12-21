@@ -3,7 +3,6 @@ $(document).ready(function() {
     if (!user.authenticated) {
         updateNavigation({ authenticated: false });
     }
-
     checkAuth();
     $('#logout-btn').on('click', function() {
         logout();
@@ -305,7 +304,13 @@ function setupAdminButtons() {
         e.stopPropagation();
         const auctionId = $(this).data('auction-id');
         const auctionTitle = $(this).data('auction-title');
-        finishAuction(auctionId, auctionTitle);
+        showConfirmDialog(
+            'Завершение аукциона',
+            `Вы уверены, что хотите завершить аукцион "${auctionTitle}" прямо сейчас?`,
+            function() {
+                finishAuction(auctionId, auctionTitle);
+            }
+        );
     });
 }
 
@@ -313,19 +318,16 @@ function setupAdminButtons() {
  * Завершает аукцион администратором
  */
 function finishAuction(auctionId, auctionTitle) {
-    if (!confirm(`Вы уверены, что хотите завершить аукцион "${auctionTitle}" прямо сейчас?`)) {
-        return;
-    }
     $.ajax({
         url: `/api/bids/finish-auction/${auctionId}`,
         method: 'POST',
         success: function(response) {
-            showNotification('Аукцион успешно завершен. Победитель определен.', 'success');
+            showUserNotification('Аукцион успешно завершен. Победитель определен.', 'success');
             loadAuctions();
         },
         error: function(xhr) {
             const error = xhr.responseJSON?.error || 'Ошибка при завершении аукциона';
-            showNotification(error, 'danger');
+            showUserNotification(error, 'danger');
         }
     });
 }
@@ -376,7 +378,6 @@ function renderCompletedAuctions(auctions) {
                 <i class="bi bi-trash me-1"></i>Удалить
             </button>
         ` : '';
-
         html += `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
@@ -416,7 +417,13 @@ function renderCompletedAuctions(auctions) {
         $('.delete-auction-btn').on('click', function() {
             const auctionId = $(this).data('auction-id');
             const auctionTitle = $(this).data('auction-title');
-            deleteCompletedAuction(auctionId, auctionTitle);
+            showConfirmDialog(
+                'Удаление аукциона',
+                `Вы уверены, что хотите удалить аукцион "${auctionTitle}"? Это действие нельзя отменить.`,
+                function() {
+                    deleteCompletedAuction(auctionId, auctionTitle);
+                }
+            );
         });
     }
 }
@@ -425,21 +432,17 @@ function renderCompletedAuctions(auctions) {
  * Удаляет завершенный аукцион
  */
 function deleteCompletedAuction(auctionId, auctionTitle) {
-    if (!confirm(`Вы уверены, что хотите удалить аукцион "${auctionTitle}"? Это действие нельзя отменить.`)) {
-        return;
-    }
-
     $.ajax({
         url: `/api/auctions/${auctionId}`,
         method: 'DELETE',
         success: function(response) {
-            showNotification('Аукцион успешно удален', 'success');
+            showUserNotification('Аукцион успешно удален', 'success');
             // Перезагружаем список завершенных аукционов
             loadCompletedAuctions();
         },
         error: function(xhr) {
             const error = xhr.responseJSON?.error || 'Ошибка при удалении аукциона';
-            showNotification(error, 'danger');
+            showUserNotification(error, 'danger');
         }
     });
 }
@@ -586,23 +589,70 @@ function isAuctionNew(createdAt) {
 }
 
 /**
- * Показывает уведомление
- * @param {string} message - Сообщение
+ * Показывает уведомление пользователю в правом верхнем углу.
+ * @param {string} message - Текст сообщения
  * @param {string} type - Тип уведомления (success, danger, warning, info)
  */
-function showNotification(message, type = 'info') {
-    const alertClass = type === 'success' ? 'alert-success' :
-                      type === 'danger' ? 'alert-danger' :
+function showUserNotification(message, type = 'info') {
+    $('.user-notification').remove();
+    
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'danger' ? 'alert-danger' : 
                       type === 'warning' ? 'alert-warning' : 'alert-info';
+    
     const $notification = $(`
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert"
-             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;">
+        <div class="alert ${alertClass} alert-dismissible fade show user-notification" role="alert" 
+             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;">
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `);
+    
     $('body').append($notification);
+    
     setTimeout(() => {
-        $notification.alert('close');
+        $notification.fadeOut(300, function () {
+            $(this).remove();
+        });
     }, 3000);
+}
+
+/**
+ * Показывает диалог подтверждения
+ * @param {string} title - Заголовок диалога
+ * @param {string} message - Сообщение
+ * @param {function} onConfirm - Функция при подтверждении
+ */
+function showConfirmDialog(title, message, onConfirm) {
+    const modalHtml = `
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" id="confirmOkBtn">Подтвердить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    $('body').append(modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+    $('#confirmOkBtn').on('click', function() {
+        modal.hide();
+        $('.modal-backdrop').remove();
+        $('#confirmModal').remove();
+        onConfirm();
+    });
+    $('#confirmModal').on('hidden.bs.modal', function() {
+        $(this).remove();
+    });
 }

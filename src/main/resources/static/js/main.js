@@ -3,7 +3,6 @@ $(document).ready(function() {
     if (!user.authenticated) {
         updateNavigation({ authenticated: false });
     }
-
     checkAuth();
     $('#logout-btn').on('click', function() {
         logout();
@@ -60,8 +59,6 @@ function updateNavigation(response) {
         $('#login-item').addClass('hidden');
         $('#logout-item').removeClass('hidden');
         $('#user-cabinet-item').removeClass('hidden');
-
-        // Сохраняем данные пользователя
         const userData = {
             authenticated: true,
             id: response.id,
@@ -81,8 +78,6 @@ function updateNavigation(response) {
         $('#login-item').removeClass('hidden');
         $('#logout-item').addClass('hidden');
         $('#user-cabinet-item').addClass('hidden');
-
-        // Сохраняем данные гостя
         localStorage.setItem('user', JSON.stringify({ authenticated: false }));
     }
 }
@@ -158,14 +153,12 @@ function renderFeaturedAuctions(auctions) {
         `);
         return;
     }
-
     let html = '';
     auctions.slice(0, 6).forEach(auction => {
         const timeLeft = calculateTimeLeft(auction.endTime);
         const timeClass = getTimeClass(timeLeft);
         const isNew = isAuctionNew(auction.createdAt);
         const badge = isNew ? '<span class="badge bg-success me-1">Новый</span>' : '';
-
         html += `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card auction-card shadow-sm h-100">
@@ -208,7 +201,6 @@ function renderFeaturedAuctions(auctions) {
             </div>
         `;
     });
-
     $container.html(html);
 }
 
@@ -219,12 +211,9 @@ function renderFeaturedAuctions(auctions) {
  */
 function getAuctionButton(auction) {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-    // Проверяем, завершен ли аукцион
     const endTime = new Date(auction.endTime);
     const now = new Date();
     const isEnded = now > endTime || auction.status === 'FINISHED' || auction.status === 'CANCELLED';
-
     if (isEnded) {
         return `
             <a href="auction-detail.html?id=${auction.id}" class="btn btn-secondary btn-sm">
@@ -232,8 +221,6 @@ function getAuctionButton(auction) {
             </a>
         `;
     }
-
-    // Проверяем авторизацию
     if (user.authenticated) {
         return `
             <a href="auction-detail.html?id=${auction.id}" class="btn btn-primary btn-sm">

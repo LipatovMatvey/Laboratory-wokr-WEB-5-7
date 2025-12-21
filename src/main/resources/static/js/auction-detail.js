@@ -6,7 +6,7 @@ $(document).ready(function() {
         loadBidsHistory(auctionId);
         startTimeUpdate();
     } else {
-        showSimpleError('Аукцион не найден');
+        showUserNotification('Аукцион не найден', 'danger');
         setTimeout(() => window.location.href = 'auctions.html', 2000);
     }
 });
@@ -59,7 +59,7 @@ function loadAuctionDetails(auctionId) {
             setupBidForm(auction);
         },
         error: function(xhr) {
-            showSimpleError('Не удалось загрузить данные аукциона');
+            showUserNotification('Не удалось загрузить данные аукциона', 'danger');
         }
     });
 }
@@ -152,15 +152,15 @@ function placeBid(auctionId) {
     const bidAmount = parseFloat($('#bid-amount').val());
     const minBid = (currentAuction.currentPrice || currentAuction.startPrice) + currentAuction.step;    
     if (!bidAmount || bidAmount < minBid) {
-        showSimpleError(`Минимальная ставка: ${formatPrice(minBid)} ₽`);
+        showUserNotification(`Минимальная ставка: ${formatPrice(minBid)} ₽`, 'warning');
         return;
     }    
     if (!userData || !userData.authenticated) {
-        showSimpleError('Для размещения ставки необходимо войти в систему');
+        showUserNotification('Для размещения ставки необходимо войти в систему', 'warning');
         return;
     }    
     if (userData.balance < bidAmount) {
-        showSimpleError(`Недостаточно средств! Ваш баланс: ${formatPrice(userData.balance)} ₽, требуется: ${formatPrice(bidAmount)} ₽`);
+        showUserNotification(`Недостаточно средств! Ваш баланс: ${formatPrice(userData.balance)} ₽, требуется: ${formatPrice(bidAmount)} ₽`, 'danger');
         return;
     }    
     $('#confirm-bid-amount').text(formatPrice(bidAmount));
@@ -183,14 +183,14 @@ function confirmPlaceBid(auctionId) {
         }),
         success: function(response) {
             $('#confirmBidModal').modal('hide');
-            showSimpleSuccess('Ставка успешно размещена!');
+            showUserNotification('Ставка успешно размещена!', 'success');
             loadAuctionDetails(auctionId);
             loadBidsHistory(auctionId);
             loadUserBalance();
         },
         error: function(xhr) {
             const error = xhr.responseJSON?.error || 'Ошибка при размещении ставки';
-            showSimpleError(error);
+            showUserNotification(error, 'danger');
         }
     });
 }
@@ -325,39 +325,30 @@ function formatPrice(price) {
 }
 
 /**
- * Показывает простое уведомление об успехе
+ * Показывает уведомление пользователю в правом верхнем углу.
+ * @param {string} message - Текст сообщения
+ * @param {string} type - Тип уведомления (success, danger, warning, info)
  */
-function showSimpleSuccess(message) {
-    $('.simple-notification').remove();    
+function showUserNotification(message, type = 'info') {
+    $('.user-notification').remove();
+    
+    const alertClass = type === 'success' ? 'alert-success' : 
+                      type === 'danger' ? 'alert-danger' : 
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
     const $notification = $(`
-        <div class="simple-notification alert alert-success alert-dismissible fade show" 
-             style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-            <strong>Успех!</strong> ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `);    
-    $('body').append($notification);    
-    setTimeout(() => {
-        $notification.alert('close');
-    }, 3000);
-}
-
-/**
- * Показывает простое уведомление об ошибке
- */
-function showSimpleError(message) {
-    $('.simple-notification').remove();    
-    const $notification = $(`
-        <div class="simple-notification alert alert-danger alert-dismissible fade show" 
-             style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-            <strong>Ошибка!</strong> ${message}
+        <div class="alert ${alertClass} alert-dismissible fade show user-notification" role="alert" 
+             style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px; max-width: 400px;">
+            ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `);
-    $('body').append($notification);    
+    $('body').append($notification);
+    
     setTimeout(() => {
-        $notification.alert('close');
-    }, 5000);
+        $notification.fadeOut(300, function () {
+            $(this).remove();
+        });
+    }, 3000);
 }
 
 /**

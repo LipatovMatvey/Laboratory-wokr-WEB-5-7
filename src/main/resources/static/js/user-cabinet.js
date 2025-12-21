@@ -156,7 +156,7 @@ function addFixedBalance() {
                 errorMessage = xhr.statusText || 'Сервер недоступен';
             }
             message = `❌ ${errorMessage}`;
-            showUserNotification(message, "warning")
+            showUserNotification(message, "warning");
         },
         complete: function() {
             $button.prop('disabled', false).html(originalText);
@@ -585,10 +585,8 @@ function renderUserBids(bids) {
 function loadWonLots() {
     const userStr = localStorage.getItem('user');
     if (!userStr) return;
-    
     const user = JSON.parse(userStr);
     console.log('Загрузка выигранных лотов для пользователя:', user.id);
-    
     $.ajax({
         url: `/api/users/${user.id}/won-lots`,
         method: "GET",

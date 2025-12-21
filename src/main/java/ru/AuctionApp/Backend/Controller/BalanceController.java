@@ -25,10 +25,12 @@ public class BalanceController {
      * Репозиторий для работы с пользователями.
      */
     @Autowired
-    private UsersRepository usersRepository; // Добавляем этот бин
+    private UsersRepository usersRepository;
 
     /**
-     * Обработчик всех ошибок RuntimeException.
+     * Обрабатывает исключения типа RuntimeException
+     * @param ex исключение RuntimeException, которое было выброшено в методах контроллера
+     * @return карта (Map) с ключом "error" и сообщением об ошибке из исключения в качестве значения
      */
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
